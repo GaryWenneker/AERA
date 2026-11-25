@@ -85,3 +85,7 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 
 ### Wallpaper increment
 - [ ] AERA-055 built-in artwork and local PNG/JPEG/WebP, Settings selection, cover/fit, GPU texture caching; validate screenshot and decode limits. Follow with persistent preferences and native file picker.
+
+### Window and terminal increment
+- [ ] AERA-056 custom window frame and two-axis resizing, test drag and restore on real desktop.
+- [ ] AERA-057 terminal command runner, bounded asynchronous output, cancel, history, cd, and icon integration. Next: PTY and ANSI terminal grid, interactive shells, tabs, per-workspace sessions.
