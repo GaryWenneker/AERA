@@ -970,8 +970,11 @@ fn main() -> eframe::Result {
             }
             Ok(Box::new(Shell {
                 dark,
-                    egui::TextureOptions::LINEAR,
-                )),
+                wallpaper_choice: if safe_mode {
+                    3
+                } else {
+                    wallpaper::default_index()
+                },
                 glass_available: available,
                 glass_enabled: available,
                 ..Shell::default()
