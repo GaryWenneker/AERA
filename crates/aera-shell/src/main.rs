@@ -3,8 +3,10 @@
 use aera_shell::{search, Desktop, Panel};
 use eframe::egui::{self, Color32, RichText};
 mod design;
+mod disks;
+mod files;
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 struct Shell {
     desktop: Desktop,
@@ -12,7 +14,9 @@ struct Shell {
     dark: bool,
     zoom: f32,
     directory: Option<PathBuf>,
-    entries: Vec<String>,
+    entries: Vec<files::Entry>,
+    volumes: Vec<disks::Volume>,
+    selected: Option<PathBuf>,
     file_error: Option<String>,
 }
 
@@ -25,18 +29,15 @@ impl Default for Shell {
             zoom: 1.0,
             directory: std::env::current_dir().ok(),
             entries: Vec::new(),
+            volumes: Vec::new(),
+            selected: None,
             file_error: None,
         }
     }
 }
 
-fn read_directory(path: &Path) -> std::io::Result<Vec<String>> {
-    let mut names = Vec::new();
-    for entry in std::fs::read_dir(path)?.take(200) {
-        names.push(entry?.file_name().to_string_lossy().into_owned());
-    }
-    names.sort_unstable();
-    Ok(names)
+fn home() -> Option<PathBuf> {
+    std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" }).map(PathBuf::from)
 }
 
 impl Shell {
@@ -44,16 +45,134 @@ impl Shell {
         self.desktop.set_open(panel, true);
         if panel == Panel::Files {
             self.refresh_files();
+        } else if panel == Panel::Disks {
+            self.volumes = disks::inventory();
         }
     }
 
     fn refresh_files(&mut self) {
         self.entries.clear();
+        self.selected = None;
         self.file_error = None;
-        match self.directory.as_deref().map(read_directory) {
+        match self.directory.as_deref().map(files::list) {
             Some(Ok(entries)) => self.entries = entries,
             Some(Err(error)) => self.file_error = Some(error.to_string()),
             None => self.file_error = Some("Working directory unavailable".into()),
+        }
+    }
+
+    fn navigate(&mut self, path: PathBuf) {
+        match files::list(&path) {
+            Ok(entries) => {
+                self.directory = Some(path);
+                self.entries = entries;
+                self.selected = None;
+                self.file_error = None;
+            }
+            Err(error) => self.file_error = Some(error.to_string()),
+        }
+    }
+
+    fn files_view(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            if ui.button("Home").clicked() {
+                if let Some(path) = home() {
+                    self.navigate(path);
+                }
+            }
+            if ui.button("Parent").clicked() {
+                if let Some(path) = self.directory.as_deref().and_then(std::path::Path::parent) {
+                    self.navigate(path.to_path_buf());
+                }
+            }
+            if ui.button("Refresh").clicked() {
+                self.refresh_files();
+            }
+            if ui.button("Volumes").clicked() {
+                self.launch(Panel::Disks);
+            }
+        });
+        if let Some(path) = &self.directory {
+            ui.label(path.display().to_string());
+        }
+        if let Some(error) = &self.file_error {
+            ui.colored_label(Color32::LIGHT_RED, error);
+        }
+        ui.separator();
+        let mut next = None;
+        egui::ScrollArea::vertical()
+            .max_height(280.0)
+            .show(ui, |ui| {
+                egui::Grid::new("file-table").striped(true).show(ui, |ui| {
+                    ui.strong("Name");
+                    ui.strong("Type");
+                    ui.strong("Size (bytes)");
+                    ui.end_row();
+                    for entry in &self.entries {
+                        let response = ui.selectable_label(
+                            self.selected.as_ref() == Some(&entry.path),
+                            entry.name.to_string_lossy(),
+                        );
+                        if response.clicked() {
+                            self.selected = Some(entry.path.clone());
+                        }
+                        if response.double_clicked() && entry.kind == "Folder" {
+                            next = Some(entry.path.clone());
+                        }
+                        ui.label(entry.kind);
+                        ui.label(entry.size.map_or_else(|| "-".into(), |n| n.to_string()));
+                        ui.end_row();
+                    }
+                });
+            });
+        if let Some(path) = next {
+            self.navigate(path);
+        }
+        ui.separator();
+        ui.label(format!(
+            "{} items · first 1000 entries · read-only",
+            self.entries.len()
+        ));
+        if let Some(path) = &self.selected {
+            ui.label(format!("Selected: {}", path.display()));
+        }
+    }
+
+    fn disks_view(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Mounted volumes");
+        ui.label("Read-only capacity overview; not a physical partition inventory.");
+        if ui.button("Refresh").clicked() {
+            self.volumes = disks::inventory();
+        }
+        if self.volumes.is_empty() {
+            ui.label("No volumes reported by this platform.");
+        }
+        let mut browse = None;
+        egui::ScrollArea::vertical().max_height(280.0).show(ui, |ui| {
+            for volume in &self.volumes {
+                ui.group(|ui| {
+                    ui.strong(&volume.name);
+                    ui.label(format!("{} · {}", volume.mount.display(), volume.filesystem));
+                    if volume.total > 0 {
+                        let used = disks::used_fraction(volume.total, volume.available);
+                        ui.add(egui::ProgressBar::new(used).show_percentage());
+                        ui.label(format!(
+                            "{:.1} GiB available / {:.1} GiB total",
+                            volume.available as f64 / 1073741824.0,
+                            volume.total as f64 / 1073741824.0
+                        ));
+                    } else {
+                        ui.label("Capacity unavailable");
+                    }
+                    if ui.button("Browse volume").clicked() {
+                        browse = Some(volume.mount.clone());
+                    }
+                });
+            }
+        });
+        if let Some(path) = browse {
+            self.desktop.set_open(Panel::Files, true);
+            self.navigate(path);
         }
     }
 
@@ -66,26 +185,15 @@ impl Shell {
         egui::Window::new(panel.title())
             .open(&mut open)
             .default_pos([80.0 + offset, 110.0 + offset])
-            .default_size([380.0, 260.0])
+            .default_size(if matches!(panel, Panel::Files | Panel::Disks) {
+                [650.0, 380.0]
+            } else {
+                [380.0, 260.0]
+            })
             .resizable(true)
             .show(ctx, |ui| match panel {
-                Panel::Files => {
-                    if let Some(path) = &self.directory {
-                        ui.label(path.display().to_string());
-                    }
-                    ui.label("Read-only working directory · first 200 entries");
-                    if ui.button("Refresh").clicked() {
-                        self.refresh_files();
-                    }
-                    if let Some(error) = &self.file_error {
-                        ui.colored_label(Color32::LIGHT_RED, error);
-                    }
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        for name in &self.entries {
-                            ui.label(name);
-                        }
-                    });
-                }
+                Panel::Files => self.files_view(ui),
+                Panel::Disks => self.disks_view(ui),
                 Panel::Settings => {
                     if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
                         design::apply(ctx, self.dark);
@@ -95,6 +203,14 @@ impl Shell {
                         .changed()
                     {
                         ctx.set_zoom_factor(self.zoom);
+                    }
+                    ui.separator();
+                    ui.heading("Storage & system");
+                    if ui.button("Open Disks").clicked() {
+                        self.launch(Panel::Disks);
+                    }
+                    if ui.button("System information").clicked() {
+                        self.launch(Panel::About);
                     }
                     ui.label("Session settings only");
                 }
@@ -134,7 +250,7 @@ impl eframe::App for Shell {
         egui::TopBottomPanel::bottom("dock").show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
                 for panel in Panel::ALL {
-                    if ui.button(panel.title()).clicked() {
+                    if ui.selectable_label(self.desktop.is_open(panel), panel.title()).clicked() {
                         self.launch(panel);
                     }
                 }
@@ -147,6 +263,14 @@ impl eframe::App for Shell {
                 ui.label(RichText::new("A E R A").size(48.0).strong());
                 ui.label("One OS. Any machine.");
                 ui.add_space(20.0);
+                ui.horizontal_wrapped(|ui| {
+                    for panel in Panel::ALL {
+                        if ui.add_sized([110.0, 64.0], egui::Button::new(panel.title())).clicked() {
+                            self.launch(panel);
+                        }
+                    }
+                });
+                ui.add_space(12.0);
                 let response = ui.add(
                     egui::TextEdit::singleline(&mut self.query).hint_text("Search applications"),
                 );
