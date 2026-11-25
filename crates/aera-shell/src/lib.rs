@@ -3,16 +3,18 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Panel {
     Files,
+    Disks,
     Settings,
     About,
 }
 
 impl Panel {
-    pub const ALL: [Self; 3] = [Self::Files, Self::Settings, Self::About];
+    pub const ALL: [Self; 4] = [Self::Files, Self::Disks, Self::Settings, Self::About];
 
     pub fn title(self) -> &'static str {
         match self {
             Self::Files => "Files",
+            Self::Disks => "Disks",
             Self::Settings => "Settings",
             Self::About => "About",
         }
@@ -29,7 +31,7 @@ pub fn search(query: &str) -> Vec<Panel> {
 
 #[derive(Default)]
 pub struct Desktop {
-    open: [bool; 3],
+    open: [bool; 4],
 }
 
 impl Desktop {
