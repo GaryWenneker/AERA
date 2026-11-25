@@ -196,3 +196,38 @@ pub fn section(ui: &mut egui::Ui, title: &str, content: impl FnOnce(&mut egui::U
             content(ui);
         });
 }
+
+pub fn file_icon(ui: &egui::Ui, rect: egui::Rect, kind: &str, path: &std::path::Path) {
+    let painter = ui.painter();
+    let size = rect.width().min(rect.height());
+    let origin = rect.center() - egui::vec2(size, size) * 0.5;
+    let point = |x: f32, y: f32| origin + egui::vec2(x, y) * size;
+    let bounds = |x: f32, y: f32, w: f32, h: f32| {
+        egui::Rect::from_min_max(point(x, y), point(x + w, y + h))
+    };
+    if kind == "Folder" {
+        painter.rect_filled(bounds(0.08, 0.17, 0.39, 0.26), 3, Color32::from_rgb(64, 126, 205));
+        painter.rect_filled(bounds(0.08, 0.29, 0.84, 0.58), 4, Color32::from_rgb(91, 158, 234));
+        painter.line_segment(
+            [point(0.14, 0.33), point(0.86, 0.33)],
+            Stroke::new(1.0_f32, Color32::from_white_alpha(125)),
+        );
+    } else {
+        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_ascii_lowercase();
+        let accent = match ext.as_str() {
+            "png" | "jpg" | "jpeg" | "webp" => Color32::from_rgb(122, 100, 190),
+            "rs" | "js" | "ts" | "py" | "toml" => Color32::from_rgb(65, 117, 190),
+            "pdf" => Color32::from_rgb(193, 78, 83),
+            _ => Color32::from_rgb(117, 129, 151),
+        };
+        painter.rect_filled(bounds(0.18, 0.06, 0.64, 0.86), 3, Color32::from_rgb(242, 245, 251));
+        painter.rect_stroke(bounds(0.18, 0.06, 0.64, 0.86), 3, Stroke::new(0.8_f32, accent), egui::StrokeKind::Inside);
+        for y in [0.37, 0.49] {
+            painter.line_segment([point(0.3, y), point(0.68, y)], Stroke::new(1.0_f32, accent));
+        }
+        if size >= 32.0 {
+            let label: String = ext.chars().take(4).collect::<String>().to_uppercase();
+            painter.text(point(0.5, 0.73), egui::Align2::CENTER_CENTER, label, egui::FontId::proportional(9.0), accent);
+        }
+    }
+}
