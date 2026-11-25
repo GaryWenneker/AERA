@@ -5,8 +5,12 @@ use std::path::Path;
 include!(concat!(env!("OUT_DIR"), "/photos.rs"));
 
 pub const NAMES: [&str; 6] = [
-    "Alpine lake", "Midnight", "Autumn lake",
-    "Alpine artwork", "Dusk artwork", "Silk",
+    "Alpine lake",
+    "Midnight",
+    "Autumn lake",
+    "Alpine artwork",
+    "Dusk artwork",
+    "Silk",
 ];
 
 pub fn available(index: usize) -> bool {
@@ -24,7 +28,8 @@ pub fn builtin(index: usize) -> egui::ColorImage {
         if let Ok(image) = image::load_from_memory_with_format(bytes, image::ImageFormat::Jpeg) {
             let rgba = image.thumbnail(3840, 2160).to_rgba8();
             return egui::ColorImage::from_rgba_unmultiplied(
-                [rgba.width() as usize, rgba.height() as usize], rgba.as_raw(),
+                [rgba.width() as usize, rgba.height() as usize],
+                rgba.as_raw(),
             );
         }
     }
@@ -42,7 +47,10 @@ pub fn thumbnail(index: usize) -> egui::ColorImage {
             pixels.push(full.pixels[(y * h / height) * w + x * w / width]);
         }
     }
-    egui::ColorImage { size: [width, height], pixels }
+    egui::ColorImage {
+        size: [width, height],
+        pixels,
+    }
 }
 
 fn artwork(index: usize) -> egui::ColorImage {
