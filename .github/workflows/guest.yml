@@ -1,0 +1,47 @@
+name: AERA guest preview
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'os/**'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - '.github/workflows/guest.yml'
+permissions:
+  contents: read
+jobs:
+  guest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build shell against Debian bookworm glibc
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src rust:1.91-bookworm bash -ec '
+            apt-get update
+            apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libwayland-dev libssl-dev
+            cargo build -p aera-shell --release
+          '
+      - name: Install image tooling
+        run: sudo apt-get update && sudo apt-get install -y debootstrap qemu-utils qemu-system-x86 libguestfs-tools
+      - name: Build guest image
+        run: |
+          mkdir -p dist
+          sudo bash os/build-image.sh dist/aera target/release/aera-shell
+          sudo chown -R "$(id -u):$(id -g)" dist
+      - name: Boot guest and verify graphical session
+        run: bash os/smoke-vm.sh dist/aera
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aera-guest-serial
+          path: dist/aera/serial.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aera-x86_64-preview
+          path: |
+            dist/aera/aera.qcow2
+            dist/aera/vmlinuz
+            dist/aera/initrd.img
+            dist/aera/SHA256SUMS
+          retention-days: 7
