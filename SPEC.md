@@ -64,3 +64,5 @@ AERA-053 requires a desktop-first visual correction per DESIGN.md and GLASS.md, 
 
 - [ ] AERA-056 Floating windows have translucent themed frames, independently resizable width/height and scrollable content; opacity configurable. Actual backdrop blur remains a separate compositor gate.
 - [ ] AERA-057 Terminal app launches real user-requested commands asynchronously, streams bounded output, supports persistent working directory, history and cancellation. Hosted execution is explicitly labelled host execution; guest uses guest shell. No elevation or automatic execution. Full PTY/ANSI interactive emulation follows.
+
+- [ ] AERA-058 Refined desktop visual hierarchy: flat global menu, edge-to-edge wallpaper, consistent type and spacing, grouped Settings, restrained window/dock material, clear hover/focus. Actual screenshot review required.
