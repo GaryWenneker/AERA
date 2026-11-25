@@ -16,6 +16,7 @@ use std::path::PathBuf;
 
 struct Shell {
     desktop: Desktop,
+    focus_request: Option<Panel>,
     terminal: terminal::Terminal,
     pty: Option<pty_terminal::Session>,
     pty_error: Option<String>,
@@ -51,6 +52,7 @@ impl Default for Shell {
     fn default() -> Self {
         Self {
             desktop: Desktop::default(),
+            focus_request: None,
             terminal: terminal::Terminal::default(),
             pty: None,
             pty_error: None,
@@ -66,7 +68,7 @@ impl Default for Shell {
             zoom: 1.0,
             compact_dock: true,
             wallpaper_texture: None,
-            wallpaper_choice: 0,
+            wallpaper_choice: wallpaper::default_index(),
             wallpaper_thumbs: Vec::new(),
             icon_view: true,
             wallpaper_path: String::new(),
@@ -90,7 +92,12 @@ fn home() -> Option<PathBuf> {
 
 impl Shell {
     fn launch(&mut self, panel: Panel) {
+        let was_open = self.desktop.is_open(panel);
         self.desktop.set_open(panel, true);
+        self.focus_request = Some(panel);
+        if was_open {
+            return;
+        }
         if panel == Panel::Files {
             self.refresh_files();
         } else if panel == Panel::Disks {
@@ -444,7 +451,7 @@ impl Shell {
                         for index in 0..wallpaper::NAMES.len() {
                             self.wallpaper_thumbs.push(ctx.load_texture(
                                 format!("wallpaper-thumb-{index}"),
-                                wallpaper::builtin(index),
+                                wallpaper::thumbnail(index),
                                 egui::TextureOptions::LINEAR,
                             ));
                         }
@@ -452,6 +459,9 @@ impl Shell {
                     let mut chosen = None;
                     ui.horizontal_wrapped(|ui| {
                         for (index, name) in wallpaper::NAMES.iter().enumerate() {
+                            if !wallpaper::available(index) {
+                                continue;
+                            }
                             ui.vertical(|ui| {
                                 let image = egui::Image::new(&self.wallpaper_thumbs[index])
                                     .fit_to_exact_size(egui::vec2(112.0, 63.0))
@@ -474,8 +484,11 @@ impl Shell {
                         self.wallpaper_choice = index;
                         self.wallpaper_error = None;
                     }
+                    if !wallpaper::available(0) {
+                        ui.small("Photo pack not installed. Run os/fetch-wallpapers.py and rebuild.");
+                    }
                     ui.label("Local image (PNG, JPEG, WebP)");
-                    ui.text_edit_singleline(&mut self.wallpaper_path);
+                    ui.add(egui::TextEdit::singleline(&mut self.wallpaper_path).hint_text("Image file path").desired_width(f32::INFINITY));
                     if ui.button("Apply image").clicked() {
                         match wallpaper::load(std::path::Path::new(&self.wallpaper_path)) {
                             Ok(image) => {
@@ -603,7 +616,7 @@ impl Shell {
             .id(egui::Id::new(("app", workspace, panel as usize)))
             .default_pos([80.0 + offset, 80.0 + offset])
             .default_size(
-                if matches!(panel, Panel::Files | Panel::Disks | Panel::Terminal) {
+                if matches!(panel, Panel::Files | Panel::Disks | Panel::Terminal | Panel::Settings) {
                     [650.0, 380.0]
                 } else {
                     [380.0, 260.0]
@@ -782,6 +795,12 @@ impl eframe::App for Shell {
         for panel in Panel::ALL {
             self.panel(ctx, panel);
         }
+        if let Some(panel) = self.focus_request.take() {
+            ctx.move_to_top(egui::LayerId::new(
+                egui::Order::Middle,
+                egui::Id::new(("app", self.desktop.active(), panel as usize)),
+            ));
+        }
     }
 }
 
@@ -816,7 +835,7 @@ fn main() -> eframe::Result {
                 dark,
                 wallpaper_texture: Some(cc.egui_ctx.load_texture(
                     "desktop-wallpaper",
-                    wallpaper::builtin(0),
+                    wallpaper::builtin(wallpaper::default_index()),
                     egui::TextureOptions::LINEAR,
                 )),
                 glass_available: available,
