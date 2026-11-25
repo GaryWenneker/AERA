@@ -141,11 +141,12 @@ impl eframe::App for Shell {
                 ui.label("One OS. Any machine.");
                 ui.add_space(20.0);
                 let response = ui.add(
-                    egui::TextEdit::singleline(&mut self.query)
-                        .hint_text("Search applications"),
+                    egui::TextEdit::singleline(&mut self.query).hint_text("Search applications"),
                 );
                 let matches = search(&self.query);
-                if response.has_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter)) {
+                if (response.has_focus() || response.lost_focus())
+                    && ui.input(|input| input.key_pressed(egui::Key::Enter))
+                {
                     if let Some(panel) = matches.first() {
                         self.launch(*panel);
                     }
