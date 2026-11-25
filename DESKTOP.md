@@ -14,3 +14,7 @@ Desktop: persistent bottom dock during session, application grid, searchable lau
 - [ ] AERA-034 Guest boots to desktop with Files, Disks and Settings; evidence requires actual VM smoke plus manual interaction.
  
 First increment: Rust standard library for file navigation; sysinfo 0.33.1 disk inventory for portable read-only mount capacity, no shell commands or elevation. Pin direct dependency, audit resolved graph before release. Synchronous bounded listing and disk refresh are preview limitations; move to background workers before production. Tests use temporary directories, verify navigation and missing paths, no user file writes. No separate human approval obtained in autonomous run.
+
+## File creation and copy increment
+- [ ] AERA-035 Create a folder or empty file in the displayed directory using a single validated name; existing targets are never overwritten. Reject separators, traversal, empty names, Windows reserved names and invalid characters. Show errors and refresh on success.
+- [ ] AERA-036 Copy a selected regular file into the displayed directory with an explicit destination name and exclusive creation; reject directories, symlinks and special files; remove partial destination on I/O failure where possible. No automatic overwrite, rename, move or delete. Source is opened read-only; concurrent external path changes are not fully hardened in this prototype. Hosted writes explicitly requested through GUI only, under user permissions. No new dependency. Tests cover collision, invalid names, source preservation and copy contents.
