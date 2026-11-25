@@ -18,6 +18,9 @@ struct Shell {
     volumes: Vec<disks::Volume>,
     selected: Option<PathBuf>,
     file_error: Option<String>,
+    file_name: String,
+    file_filter: String,
+    file_notice: Option<String>,
 }
 
 impl Default for Shell {
@@ -32,6 +35,9 @@ impl Default for Shell {
             volumes: Vec::new(),
             selected: None,
             file_error: None,
+            file_name: String::new(),
+            file_filter: String::new(),
+            file_notice: None,
         }
     }
 }
@@ -73,6 +79,32 @@ impl Shell {
         }
     }
 
+    fn file_action(&mut self, action: u8) {
+        let Some(directory) = self.directory.as_deref() else {
+            self.file_error = Some("No directory selected".into());
+            return;
+        };
+        let result = match action {
+            0 => files::create(directory, &self.file_name, true),
+            1 => files::create(directory, &self.file_name, false),
+            _ => match &self.selected {
+                Some(source) => files::copy_file(source, directory, &self.file_name),
+                None => return,
+            },
+        };
+        self.file_notice = None;
+        match result {
+            Ok(()) => {
+                self.file_name.clear();
+                self.refresh_files();
+                self.file_notice = Some("Operation completed".into());
+            }
+            Err(error) => {
+                self.file_error = Some(format!("Operation failed: {error}"));
+            }
+        }
+    }
+
     fn files_view(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             if ui.button("Home").clicked() {
@@ -99,6 +131,10 @@ impl Shell {
             ui.colored_label(Color32::LIGHT_RED, error);
         }
         ui.separator();
+        ui.horizontal(|ui| {
+            ui.label("Filter");
+            ui.text_edit_singleline(&mut self.file_filter);
+        });
         let mut next = None;
         egui::ScrollArea::vertical()
             .max_height(280.0)
@@ -108,7 +144,11 @@ impl Shell {
                     ui.strong("Type");
                     ui.strong("Size (bytes)");
                     ui.end_row();
+                    let filter = self.file_filter.to_lowercase();
                     for entry in &self.entries {
+                        if !entry.name.to_string_lossy().to_lowercase().contains(&filter) {
+                            continue;
+                        }
                         let response = ui.selectable_label(
                             self.selected.as_ref() == Some(&entry.path),
                             entry.name.to_string_lossy(),
@@ -130,11 +170,44 @@ impl Shell {
         }
         ui.separator();
         ui.label(format!(
-            "{} items · first 1000 entries · read-only",
+            "{} items · first 1000 entries",
             self.entries.len()
         ));
         if let Some(path) = &self.selected {
             ui.label(format!("Selected: {}", path.display()));
+        }
+        ui.separator();
+        ui.label("Create or copy in the displayed directory (no overwrite)");
+        ui.horizontal(|ui| {
+            ui.label("New name");
+            ui.text_edit_singleline(&mut self.file_name);
+        });
+        ui.horizontal_wrapped(|ui| {
+            let ready = self.directory.is_some() && !self.file_name.is_empty();
+            if ui
+                .add_enabled(ready, egui::Button::new("New folder"))
+                .clicked()
+            {
+                self.file_action(0);
+            }
+            if ui
+                .add_enabled(ready, egui::Button::new("New file"))
+                .clicked()
+            {
+                self.file_action(1);
+            }
+            let copyable = self.entries.iter().any(|entry| {
+                entry.kind == "File" && self.selected.as_ref() == Some(&entry.path)
+            });
+            if ui
+                .add_enabled(ready && copyable, egui::Button::new("Copy selected"))
+                .clicked()
+            {
+                self.file_action(2);
+            }
+        });
+        if let Some(notice) = &self.file_notice {
+            ui.label(notice);
         }
     }
 
@@ -250,7 +323,10 @@ impl eframe::App for Shell {
         egui::TopBottomPanel::bottom("dock").show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
                 for panel in Panel::ALL {
-                    if ui.selectable_label(self.desktop.is_open(panel), panel.title()).clicked() {
+                    if ui
+                        .selectable_label(self.desktop.is_open(panel), panel.title())
+                        .clicked()
+                    {
                         self.launch(panel);
                     }
                 }
@@ -265,7 +341,10 @@ impl eframe::App for Shell {
                 ui.add_space(20.0);
                 ui.horizontal_wrapped(|ui| {
                     for panel in Panel::ALL {
-                        if ui.add_sized([110.0, 64.0], egui::Button::new(panel.title())).clicked() {
+                        if ui
+                            .add_sized([110.0, 64.0], egui::Button::new(panel.title()))
+                            .clicked()
+                        {
                             self.launch(panel);
                         }
                     }
