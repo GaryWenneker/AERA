@@ -69,3 +69,8 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 - [ ] G5/G6: fluid shape interpolation, fallback and quality settings; reusable material.
 - [ ] G7: ordered compositor backdrop capture and all shell surfaces.
 - [ ] G8: benchmark GPU, accessibility, screenshots and regression validation. See GLASS.md.
+
+### Glass cache and evidence checkpoint
+- [ ] Verify regional luminance and theme-specific tint in real frames (AERA-048).
+- [ ] Verify intermediate cache invalidation and measure pointer-only render cost (AERA-049).
+- [ ] Validate dark, light and fallback screenshots from matching source commit (AERA-050).
