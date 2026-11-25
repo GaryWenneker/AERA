@@ -12,6 +12,8 @@ capture() {
     local mode=$1 id=
     if [[ "$mode" == fallback ]]; then
         AERA_GLASS_OFF=1 target/release/aera-shell >"visual-evidence/$mode.log" 2>&1 &
+    elif [[ "$mode" == light ]]; then
+        AERA_LIGHT=1 target/release/aera-shell >"visual-evidence/$mode.log" 2>&1 &
     else
         target/release/aera-shell >"visual-evidence/$mode.log" 2>&1 &
     fi
@@ -29,12 +31,15 @@ capture() {
     # A blank or near-uniform frame is not acceptable evidence.
     colors=$(identify -format '%k' "visual-evidence/$mode.png")
     [[ "$colors" -gt 32 ]]
+    printf '%s resolution=' "$mode" >> visual-evidence/provenance.txt
     identify -format '%wx%h\n' "visual-evidence/$mode.png" >> visual-evidence/provenance.txt
     cleanup
     pid=
 }
-printf 'commit=%s\nplatform=%s\nbackend_requested=Vulkan\nrender_environment=Linux Xvfb Mesa software Vulkan\ntheme=dark\nquality=0.65 (glass)\n' "$(git rev-parse HEAD)" "$(uname -sm)" > visual-evidence/provenance.txt
+printf 'commit=%s\nplatform=%s\nbackend_requested=Vulkan\nrender_environment=Linux Xvfb Mesa software Vulkan\nthemes=dark,light,fallback-dark\nquality=0.65 (glass)\n' "$(git rev-parse HEAD)" "$(uname -sm)" > visual-evidence/provenance.txt
 capture glass
+capture light
 capture fallback
 cmp -s visual-evidence/glass.png visual-evidence/fallback.png && exit 1
+cmp -s visual-evidence/glass.png visual-evidence/light.png && exit 1
 exit 0
