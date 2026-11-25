@@ -155,7 +155,12 @@ impl Shell {
                     ui.end_row();
                     let filter = self.file_filter.to_lowercase();
                     for entry in &self.entries {
-                        if !entry.name.to_string_lossy().to_lowercase().contains(&filter) {
+                        if !entry
+                            .name
+                            .to_string_lossy()
+                            .to_lowercase()
+                            .contains(&filter)
+                        {
                             continue;
                         }
                         let response = ui.selectable_label(
@@ -178,10 +183,7 @@ impl Shell {
             self.navigate(path);
         }
         ui.separator();
-        ui.label(format!(
-            "{} items · first 1000 entries",
-            self.entries.len()
-        ));
+        ui.label(format!("{} items · first 1000 entries", self.entries.len()));
         if let Some(path) = &self.selected {
             ui.label(format!("Selected: {}", path.display()));
         }
@@ -205,9 +207,10 @@ impl Shell {
             {
                 self.file_action(1);
             }
-            let copyable = self.entries.iter().any(|entry| {
-                entry.kind == "File" && self.selected.as_ref() == Some(&entry.path)
-            });
+            let copyable = self
+                .entries
+                .iter()
+                .any(|entry| entry.kind == "File" && self.selected.as_ref() == Some(&entry.path));
             if ui
                 .add_enabled(ready && copyable, egui::Button::new("Copy selected"))
                 .clicked()
@@ -230,28 +233,34 @@ impl Shell {
             ui.label("No volumes reported by this platform.");
         }
         let mut browse = None;
-        egui::ScrollArea::vertical().max_height(280.0).show(ui, |ui| {
-            for volume in &self.volumes {
-                ui.group(|ui| {
-                    ui.strong(&volume.name);
-                    ui.label(format!("{} · {}", volume.mount.display(), volume.filesystem));
-                    if volume.total > 0 {
-                        let used = disks::used_fraction(volume.total, volume.available);
-                        ui.add(egui::ProgressBar::new(used).show_percentage());
+        egui::ScrollArea::vertical()
+            .max_height(280.0)
+            .show(ui, |ui| {
+                for volume in &self.volumes {
+                    ui.group(|ui| {
+                        ui.strong(&volume.name);
                         ui.label(format!(
-                            "{:.1} GiB available / {:.1} GiB total",
-                            volume.available as f64 / 1073741824.0,
-                            volume.total as f64 / 1073741824.0
+                            "{} · {}",
+                            volume.mount.display(),
+                            volume.filesystem
                         ));
-                    } else {
-                        ui.label("Capacity unavailable");
-                    }
-                    if ui.button("Browse volume").clicked() {
-                        browse = Some(volume.mount.clone());
-                    }
-                });
-            }
-        });
+                        if volume.total > 0 {
+                            let used = disks::used_fraction(volume.total, volume.available);
+                            ui.add(egui::ProgressBar::new(used).show_percentage());
+                            ui.label(format!(
+                                "{:.1} GiB available / {:.1} GiB total",
+                                volume.available as f64 / 1073741824.0,
+                                volume.total as f64 / 1073741824.0
+                            ));
+                        } else {
+                            ui.label("Capacity unavailable");
+                        }
+                        if ui.button("Browse volume").clicked() {
+                            browse = Some(volume.mount.clone());
+                        }
+                    });
+                }
+            });
         if let Some(path) = browse {
             self.desktop.set_open(Panel::Files, true);
             self.navigate(path);
@@ -278,9 +287,7 @@ impl Shell {
                     self.glass_available,
                     egui::Checkbox::new(&mut self.glass_enabled, "Enable GPU glass"),
                 );
-                ui.add(
-                    egui::Slider::new(&mut self.glass_quality, 0.0..=1.0).text("Blur quality"),
-                );
+                ui.add(egui::Slider::new(&mut self.glass_quality, 0.0..=1.0).text("Blur quality"));
                 ui.checkbox(&mut self.reduced_motion, "Reduce motion");
                 ui.label("Wallpaper-only optical preview; opaque application surfaces.");
                 ui.separator();
@@ -525,8 +532,8 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             design::apply(&cc.egui_ctx, true);
-            let available = cc.wgpu_render_state.is_some()
-                && std::env::var_os("AERA_GLASS_OFF").is_none();
+            let available =
+                cc.wgpu_render_state.is_some() && std::env::var_os("AERA_GLASS_OFF").is_none();
             if available {
                 if let Some(state) = &cc.wgpu_render_state {
                     glass::install(state);
