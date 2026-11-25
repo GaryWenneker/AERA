@@ -480,6 +480,7 @@ impl Shell {
 
 impl eframe::App for Shell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.terminal.poll(ctx);
         let (previous, next, escape) = ctx.input(|input| {
             let shortcut = input.modifiers.ctrl && input.modifiers.alt;
             (
