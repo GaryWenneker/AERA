@@ -51,3 +51,8 @@ Setup: disposable Linux CI builder; debootstrap, guestfish, qemu, Xorg/Openbox a
 - [ ] Physical disk inventory, authorization service and mount lifecycle; defer destructive disk operations pending independent review.
 - [ ] Monitor, terminal, installer, session/power actions, native compositor and standalone validation (AERA-034).
 See DESKTOP.md for acceptance and dependency justification. No user disk modifications in this increment.
+
+### P2g file actions checkpoint
+- [ ] AERA-035 create folder/empty file, validation and collision protection.
+- [ ] AERA-036 explicit regular-file copy, no overwrite; test error paths.
+- [ ] Add list filter and navigation history; next: asynchronous I/O, safe rename/move and recoverable trash after independent review.
