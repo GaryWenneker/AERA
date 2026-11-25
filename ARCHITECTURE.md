@@ -17,3 +17,6 @@ Avoid unbounded caches, blocking UI work, needless copies and unsafe code. Prefe
 
 ## Portability matrix
 Hosted: Windows/macOS/Linux, target x86-64 and ARM64. VM: QEMU/virtio reference, evaluate Hyper-V and Apple Virtualization. Native: UEFI reference PC and generic ARM64, then Apple model-specific bring-up. RISC-V research only. Keep hosted platform detection separate from guest and bare-metal detection.
+
+## ADR-002 — hosted GUI prototype
+Use eframe/egui 0.31.1 with the wgpu renderer for the first hosted shell; application-specific styling and state live in aera-shell. This is a native window, not HTML/Electron, and uses existing host window and GPU APIs. The eventual AERA component library and compositor are separate boundaries; evaluate replacement of the prototype toolkit against measured latency, memory, accessibility and maintenance cost. Keep GUI dependency isolated from aera-core and aera-cli. No claims of actual backend, frame rate or hardware qualification until measured. Prefer event-driven repaint. File listing is read-only and bounded, triggered explicitly rather than per frame; move I/O off the UI thread before production. No remote access, telemetry or disk modification. Dependency version initially pinned directly; lockfile, advisory review and transitive license inventory remain release gates.
