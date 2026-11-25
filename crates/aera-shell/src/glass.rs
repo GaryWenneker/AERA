@@ -264,3 +264,20 @@ pub fn preview(ui: &mut egui::Ui, dark: bool, quality: f32, reduced_motion: bool
         },
     ));
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn shader_parses_and_validates() {
+        let module = naga::front::wgsl::parse_str(include_str!("glass.wgsl")).expect("WGSL parse");
+        naga::valid::Validator::new(
+            naga::valid::ValidationFlags::all(),
+            naga::valid::Capabilities::empty(),
+        )
+        .validate(&module)
+        .expect("WGSL validation");
+        for name in ["vertex", "scene", "down", "up", "glass"] {
+            assert!(module.entry_points.iter().any(|entry| entry.name == name));
+        }
+    }
+}
