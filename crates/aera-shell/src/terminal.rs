@@ -2,7 +2,10 @@ use eframe::egui;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::{mpsc, Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    mpsc, Arc,
+};
 use std::time::Duration;
 
 const LIMIT: usize = 256 * 1024;
@@ -36,11 +39,7 @@ enum Event {
     Done(String),
 }
 
-fn stream<R: Read>(
-    mut reader: R,
-    tx: mpsc::SyncSender<Event>,
-    ctx: egui::Context,
-) {
+fn stream<R: Read>(mut reader: R, tx: mpsc::SyncSender<Event>, ctx: egui::Context) {
     let mut buf = [0u8; 4096];
     let mut pending = Vec::new();
     loop {
@@ -66,7 +65,9 @@ fn stream<R: Read>(
         }
     }
     if !pending.is_empty() {
-        let _ = tx.send(Event::Output(String::from_utf8_lossy(&pending).into_owned()));
+        let _ = tx.send(Event::Output(
+            String::from_utf8_lossy(&pending).into_owned(),
+        ));
         ctx.request_repaint();
     }
 }
@@ -76,7 +77,9 @@ impl Terminal {
         self.output.push_str(text);
         if self.output.len() > LIMIT {
             let mut start = self.output.len() - LIMIT;
-            while !self.output.is_char_boundary(start) { start += 1; }
+            while !self.output.is_char_boundary(start) {
+                start += 1;
+            }
             self.output.drain(..start);
         }
     }
@@ -84,9 +87,13 @@ impl Terminal {
     fn submit(&mut self, ctx: &egui::Context) {
         let command = std::mem::take(&mut self.input);
         let command = command.trim().to_owned();
-        if command.is_empty() { return; }
+        if command.is_empty() {
+            return;
+        }
         self.history.push(command.clone());
-        if self.history.len() > 100 { self.history.remove(0); }
+        if self.history.len() > 100 {
+            self.history.remove(0);
+        }
         self.cursor = self.history.len();
         self.append(&format!("$ {command}\n"));
         if command == "clear" {
@@ -121,8 +128,12 @@ impl Terminal {
                 c.args(["-c", &command]);
                 c
             };
-            let result = process.current_dir(cwd).stdin(Stdio::null())
-                .stdout(Stdio::piped()).stderr(Stdio::piped()).spawn();
+            let result = process
+                .current_dir(cwd)
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn();
             let message = match result {
                 Ok(mut child) => {
                     let stdout = child.stdout.take().expect("piped stdout");
@@ -146,11 +157,17 @@ impl Terminal {
                     };
                     // Descendants may retain pipes; do not block the UI waiting for them.
                     let deadline = std::time::Instant::now() + Duration::from_secs(1);
-                    while !(out.is_finished() && err.is_finished()) && std::time::Instant::now() < deadline {
+                    while !(out.is_finished() && err.is_finished())
+                        && std::time::Instant::now() < deadline
+                    {
                         std::thread::sleep(Duration::from_millis(20));
                     }
-                    if out.is_finished() { let _ = out.join(); }
-                    if err.is_finished() { let _ = err.join(); }
+                    if out.is_finished() {
+                        let _ = out.join();
+                    }
+                    if err.is_finished() {
+                        let _ = err.join();
+                    }
                     format!("\n[{status:?}]\n")
                 }
                 Err(error) => format!("Launch failed: {error}\n"),
@@ -186,27 +203,45 @@ impl Terminal {
 
     pub fn show(&mut self, ui: &mut egui::Ui, guest: bool) {
         self.poll(ui.ctx());
-        ui.small(if guest { "Guest shell" } else { "Host shell · commands run on this computer" });
+        ui.small(if guest {
+            "Guest shell"
+        } else {
+            "Host shell · commands run on this computer"
+        });
         ui.monospace(self.cwd.display().to_string());
-        egui::ScrollArea::vertical().stick_to_bottom(true)
+        egui::ScrollArea::vertical()
+            .stick_to_bottom(true)
             .max_height((ui.available_height() - 54.0).max(60.0))
-            .show(ui, |ui| { ui.monospace(&self.output); });
+            .show(ui, |ui| {
+                ui.monospace(&self.output);
+            });
         ui.horizontal(|ui| {
             ui.label("$");
-            let input = ui.add_enabled(self.result.is_none(), egui::TextEdit::singleline(&mut self.input).font(egui::TextStyle::Monospace).desired_width((ui.available_width()-85.0).max(60.0)));
+            let input = ui.add_enabled(
+                self.result.is_none(),
+                egui::TextEdit::singleline(&mut self.input)
+                    .font(egui::TextStyle::Monospace)
+                    .desired_width((ui.available_width() - 85.0).max(60.0)),
+            );
             if input.has_focus() {
                 if ui.input(|i| i.key_pressed(egui::Key::ArrowUp)) {
                     self.cursor = self.cursor.saturating_sub(1);
-                    if let Some(value) = self.history.get(self.cursor) { self.input = value.clone(); }
+                    if let Some(value) = self.history.get(self.cursor) {
+                        self.input = value.clone();
+                    }
                 }
                 if ui.input(|i| i.key_pressed(egui::Key::ArrowDown)) {
                     self.cursor = (self.cursor + 1).min(self.history.len());
                     self.input = self.history.get(self.cursor).cloned().unwrap_or_default();
                 }
             }
-            let enter = (input.has_focus() || input.lost_focus()) && ui.input(|i| i.key_pressed(egui::Key::Enter));
+            let enter = (input.has_focus() || input.lost_focus())
+                && ui.input(|i| i.key_pressed(egui::Key::Enter));
             if self.result.is_none() {
-                if ui.button("Run").clicked() || enter { self.submit(ui.ctx()); input.request_focus(); }
+                if ui.button("Run").clicked() || enter {
+                    self.submit(ui.ctx());
+                    input.request_focus();
+                }
             } else if ui.button("Stop").clicked() {
                 self.cancel.store(true, Ordering::Relaxed);
             }
