@@ -8,6 +8,7 @@ mod files;
 mod glass;
 mod icons;
 mod terminal;
+mod pty_terminal;
 mod wallpaper;
 use icons::Icon;
 
@@ -16,6 +17,9 @@ use std::path::PathBuf;
 struct Shell {
     desktop: Desktop,
     terminal: terminal::Terminal,
+    pty: Option<pty_terminal::Session>,
+    pty_error: Option<String>,
+    settings_page: usize,
     window_opacity: u8,
     query: String,
     launcher_open: bool,
@@ -46,6 +50,9 @@ impl Default for Shell {
         Self {
             desktop: Desktop::default(),
             terminal: terminal::Terminal::default(),
+            pty: None,
+            pty_error: None,
+            settings_page: 0,
             window_opacity: 82,
             query: String::new(),
             launcher_open: false,
@@ -323,12 +330,55 @@ impl Shell {
 
     fn app_content(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, panel: Panel) {
         match panel {
-            Panel::Terminal => self.terminal.show(ui, guest_session()),
+            Panel::Terminal => {
+                ui.horizontal(|ui| {
+                    ui.strong("Shell");
+                    ui.small(if guest_session() { "Guest" } else { "Host · local user permissions" });
+                    if ui.button("Restart session").clicked() {
+                        self.pty = None;
+                        self.pty_error = None;
+                    }
+                });
+                if self.pty.is_none() && self.pty_error.is_none() {
+                    match pty_terminal::Session::start(ctx) {
+                        Ok(session) => self.pty = Some(session),
+                        Err(error) => self.pty_error = Some(error),
+                    }
+                }
+                if let Some(session) = &mut self.pty {
+                    session.show(ui);
+                } else if let Some(error) = &self.pty_error {
+                    ui.label(format!("PTY unavailable: {error}"));
+                    ui.small("Fallback command runner");
+                    self.terminal.show(ui, guest_session());
+                }
+            }
             Panel::Files => self.files_view(ui),
             Panel::Disks => self.disks_view(ui),
             Panel::Settings => {
-                ui.heading("System Settings");
-                design::section(ui, "Appearance", |ui| {
+                ui.horizontal_top(|ui| {
+                    ui.vertical(|ui| {
+                        ui.set_width(145.0);
+                        ui.heading("Settings");
+                        for (index, (icon, label)) in [
+                            (Icon::Appearance, "Appearance"),
+                            (Icon::Files, "Wallpaper"),
+                            (Icon::Settings, "Glass & motion"),
+                            (Icon::Disks, "System"),
+                        ].into_iter().enumerate() {
+                            ui.horizontal(|ui| {
+                                let (rect, _) = ui.allocate_exact_size(egui::vec2(20.0, 20.0), egui::Sense::hover());
+                                icons::paint(ui, rect, icon, true);
+                                if ui.selectable_label(self.settings_page == index, label).clicked() {
+                                    self.settings_page = index;
+                                }
+                            });
+                        }
+                    });
+                    ui.separator();
+                    ui.vertical(|ui| {
+                        match self.settings_page {
+                    0 => design::section(ui, "Appearance", |ui| {
                 if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
                     design::apply(ctx, self.dark);
                 }
@@ -345,8 +395,8 @@ impl Shell {
                         .suffix("%")
                         .text("Window opacity"),
                 );
-                });
-                design::section(ui, "Wallpaper", |ui| {
+                }),
+                    1 => design::section(ui, "Wallpaper", |ui| {
                     for (index, name) in wallpaper::NAMES.iter().enumerate() {
                         if ui
                             .selectable_label(self.wallpaper_choice == index, *name)
@@ -381,8 +431,8 @@ impl Shell {
                     if let Some(error) = &self.wallpaper_error {
                         ui.colored_label(Color32::LIGHT_RED, error);
                     }
-                });
-                design::section(ui, "Glass & motion", |ui| {
+                }),
+                    2 => design::section(ui, "Glass & motion", |ui| {
                 ui.add_enabled(
                     self.glass_available,
                     egui::Checkbox::new(&mut self.glass_enabled, "Enable GPU glass"),
@@ -394,30 +444,19 @@ impl Shell {
                         glass::preview(ui, self.dark, self.glass_quality, self.reduced_motion);
                     }
                 });
-                });
-                design::section(ui, "Storage & system", |ui| {
+                }),
+                    _ => design::section(ui, "Storage & system", |ui| {
                 if icons::row(ui, Icon::Disks, "Storage").clicked() {
                     self.launch(Panel::Disks);
                 }
                 if icons::row(ui, Icon::About, "System information").clicked() {
                     self.launch(Panel::About);
                 }
-                });
-                ui.collapsing("Developer · system icon library", |ui| {
-                    ui.horizontal_wrapped(|ui| {
-                        for icon in Icon::ALL {
-                            ui.vertical(|ui| {
-                                let (rect, _) = ui.allocate_exact_size(
-                                    egui::vec2(32.0, 32.0),
-                                    egui::Sense::hover(),
-                                );
-                                icons::paint(ui, rect, icon, true);
-                                ui.small(icon.label());
-                            });
+                }),
                         }
+                        ui.small("Session settings");
                     });
                 });
-                ui.label("Session settings only");
             }
             Panel::About => {
                 let target = aera_core::Target::current();
@@ -475,7 +514,7 @@ impl Shell {
         }
         let offset = panel as usize as f32 * 30.0;
         let workspace = self.desktop.active();
-        let alpha = if self.glass_enabled {
+        let alpha = if matches!(panel, Panel::Terminal | Panel::Settings) { 255 } else if self.glass_enabled {
             (u16::from(self.window_opacity) * 255 / 100) as u8
         } else {
             255
@@ -517,6 +556,7 @@ impl Shell {
 impl eframe::App for Shell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.terminal.poll(ctx);
+        if let Some(session) = &mut self.pty { session.poll(); }
         let (previous, next, escape) = ctx.input(|input| {
             let shortcut = input.modifiers.ctrl && input.modifiers.alt;
             (
