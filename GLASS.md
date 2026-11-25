@@ -24,3 +24,5 @@ Run shader validation, fmt, clippy, tests, release build and actual Linux displa
 ## Shader validation and build throughput
 - [ ] AERA-051 Parse and validate all WGSL entry points in ordinary Rust unit tests using Naga 24 (already the wgpu shader compiler; dev-only direct dependency). GPU pipeline validation and actual display tests remain mandatory.
 - [ ] AERA-052 Coalesce stale CI/guest builds by branch; retain strict fmt/lint/test gates and capture logs on screenshot failures. Only actual successful capture artifacts count as visual evidence.
+
+- [ ] AERA-053 Desktop visual correction: no standalone material demo on desktop; centered icon dock, compact top bar, unified window chrome, Files sidebar. Demo available only in Settings. Translucent chrome is an interim approximation, not true backdrop blur. Capture desktop and Files from actual build.
