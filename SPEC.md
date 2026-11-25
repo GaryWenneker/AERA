@@ -49,3 +49,5 @@ P2a acceptance: native window launches, dock opens independent internal panels, 
 Requirements AERA-028–034 and screen-level acceptance criteria are maintained in [DESKTOP.md](DESKTOP.md), a normative extension of this specification. Files and Disks are first-class system applications, not visual placeholders. Read-only inspection precedes privileged or destructive operations.
 
 File mutation requirements AERA-035–036 extend AERA-029 and are specified in DESKTOP.md. No destructive operations authorized by this increment.
+
+Desktop window and workspace requirements AERA-037–040 in DESKTOP.md extend AERA-019/020. Normal sessions retain a global top bar; maximized internal apps hide shell chrome and retain restore controls.
