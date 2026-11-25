@@ -53,3 +53,5 @@ File mutation requirements AERA-035–036 extend AERA-029 and are specified in D
 Desktop window and workspace requirements AERA-037–040 in DESKTOP.md extend AERA-019/020. Normal sessions retain a global top bar; maximized internal apps hide shell chrome and retain restore controls.
 
 AERA-041–047 define the hybrid GPU Glass material in [GLASS.md](GLASS.md). Actual screenshot provenance is mandatory.
+
+AERA-048–050 extend GLASS.md with regional luminance, intermediate texture caching and three-mode screenshot evidence.
