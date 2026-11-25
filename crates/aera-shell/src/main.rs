@@ -593,7 +593,11 @@ impl Shell {
                         }
                     });
                     if let Some(index) = chosen {
-                        self.wallpaper_texture = Some(wallpaper::upload(ctx, "desktop-wallpaper", wallpaper::builtin(index)));
+                        self.wallpaper_texture = Some(wallpaper::upload(
+                            ctx,
+                            "desktop-wallpaper",
+                            wallpaper::builtin(index),
+                        ));
                         self.wallpaper_choice = index;
                         self.wallpaper_error = None;
                     }
@@ -605,7 +609,8 @@ impl Shell {
                     if ui.button("Apply image").clicked() {
                         match wallpaper::load(std::path::Path::new(&self.wallpaper_path)) {
                             Ok(image) => {
-                                self.wallpaper_texture = Some(wallpaper::upload(ctx, "desktop-wallpaper", image));
+                                self.wallpaper_texture =
+                                    Some(wallpaper::upload(ctx, "desktop-wallpaper", image));
                                 self.wallpaper_choice = wallpaper::NAMES.len();
                                 self.wallpaper_error = None;
                             }
