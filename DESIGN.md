@@ -15,3 +15,6 @@ Default light: porcelain, cool blue and lavender wallpaper with warm peach highl
 
 ## Wallpapers
 Desktop backgrounds are user-selectable independently of appearance. Ship original procedural landscape artwork as the default and alternate abstract and dusk choices. Custom local PNG/JPEG/WebP images supported with centered cover crop or fit. Decode bounded images, upload once per selection, preserve previous wallpaper on failure. No network fetch, no fake screenshot. First increment session-only settings; persistence and per-workspace choices later.
+
+## Desktop refinement — OS design research
+References: https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass ; https://developer.apple.com/design/human-interface-guidelines/toolbars ; https://learn.microsoft.com/en-us/windows/apps/design/design-principles ; https://developer.gnome.org/hig/patterns/nav/sidebars.html ; https://developer.gnome.org/hig/guidelines/adaptive.html . Apply material to navigation, not every content row. Use flat resting controls, visible hover/focus, 13pt body, 20pt headings, 12pt secondary labels, compact menu bar, 16px window radius, layered dock with subtle shadow, and no wallpaper inset. Settings should progressively disclose technical diagnostics. Verify actual running frames before visual approval.
