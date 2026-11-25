@@ -7,6 +7,7 @@ mod disks;
 mod files;
 mod glass;
 mod icons;
+mod wallpaper;
 use icons::Icon;
 
 use std::path::PathBuf;
@@ -22,6 +23,11 @@ struct Shell {
     reduced_motion: bool,
     zoom: f32,
     compact_dock: bool,
+    wallpaper_texture: Option<egui::TextureHandle>,
+    wallpaper_choice: usize,
+    wallpaper_path: String,
+    wallpaper_cover: bool,
+    wallpaper_error: Option<String>,
     directory: Option<PathBuf>,
     entries: Vec<files::Entry>,
     volumes: Vec<disks::Volume>,
@@ -45,6 +51,11 @@ impl Default for Shell {
             reduced_motion: false,
             zoom: 1.0,
             compact_dock: true,
+            wallpaper_texture: None,
+            wallpaper_choice: 0,
+            wallpaper_path: String::new(),
+            wallpaper_cover: true,
+            wallpaper_error: None,
             directory: std::env::current_dir().ok(),
             entries: Vec::new(),
             volumes: Vec::new(),
@@ -314,6 +325,39 @@ impl Shell {
                 }
                 ui.separator();
                 ui.checkbox(&mut self.compact_dock, "Compact dock");
+                ui.collapsing("Wallpaper", |ui| {
+                    for (index, name) in wallpaper::NAMES.iter().enumerate() {
+                        if ui.selectable_label(self.wallpaper_choice == index, *name).clicked() {
+                            self.wallpaper_texture = Some(ctx.load_texture(
+                                "desktop-wallpaper",
+                                wallpaper::builtin(index),
+                                egui::TextureOptions::LINEAR,
+                            ));
+                            self.wallpaper_choice = index;
+                            self.wallpaper_error = None;
+                        }
+                    }
+                    ui.label("Local image (PNG, JPEG, WebP)");
+                    ui.text_edit_singleline(&mut self.wallpaper_path);
+                    if ui.button("Apply image").clicked() {
+                        match wallpaper::load(std::path::Path::new(&self.wallpaper_path)) {
+                            Ok(image) => {
+                                self.wallpaper_texture = Some(ctx.load_texture(
+                                    "desktop-wallpaper",
+                                    image,
+                                    egui::TextureOptions::LINEAR,
+                                ));
+                                self.wallpaper_choice = wallpaper::NAMES.len();
+                                self.wallpaper_error = None;
+                            }
+                            Err(error) => self.wallpaper_error = Some(error),
+                        }
+                    }
+                    ui.checkbox(&mut self.wallpaper_cover, "Fill screen (crop)");
+                    if let Some(error) = &self.wallpaper_error {
+                        ui.colored_label(Color32::LIGHT_RED, error);
+                    }
+                });
                 ui.heading("Liquid Glass");
                 ui.add_enabled(
                     self.glass_available,
@@ -499,7 +543,11 @@ impl eframe::App for Shell {
             });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
-            design::wallpaper(ui, self.dark);
+            if let Some(texture) = &self.wallpaper_texture {
+                wallpaper::paint(ui, texture, self.wallpaper_cover);
+            } else {
+                design::wallpaper(ui, self.dark);
+            }
         });
         egui::Area::new(egui::Id::new("floating-dock"))
             .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -12.0))
@@ -586,6 +634,11 @@ fn main() -> eframe::Result {
             }
             Ok(Box::new(Shell {
                 dark,
+                wallpaper_texture: Some(cc.egui_ctx.load_texture(
+                    "desktop-wallpaper",
+                    wallpaper::builtin(0),
+                    egui::TextureOptions::LINEAR,
+                )),
                 glass_available: available,
                 glass_enabled: available,
                 ..Shell::default()
