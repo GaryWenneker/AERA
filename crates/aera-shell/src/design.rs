@@ -37,13 +37,29 @@ pub fn apply(ctx: &egui::Context, dark: bool, accent_index: usize) {
         (3, false) => Color32::from_rgb(83, 91, 112),
         _ => default_accent,
     };
-    style.text_styles.insert(egui::TextStyle::Body, egui::FontId::proportional(13.0));
-    style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
-    style.text_styles.insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
-    style.text_styles.insert(egui::TextStyle::Heading, egui::FontId::proportional(20.0));
+    style
+        .text_styles
+        .insert(egui::TextStyle::Body, egui::FontId::proportional(13.0));
+    style
+        .text_styles
+        .insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
+    style
+        .text_styles
+        .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
+    style
+        .text_styles
+        .insert(egui::TextStyle::Heading, egui::FontId::proportional(20.0));
     style.visuals.panel_fill = canvas;
-    style.visuals.extreme_bg_color = if dark { Color32::from_rgb(20, 24, 34) } else { Color32::from_rgb(232, 236, 245) };
-    style.visuals.faint_bg_color = if dark { Color32::from_rgb(35, 40, 52) } else { Color32::from_rgb(238, 241, 247) };
+    style.visuals.extreme_bg_color = if dark {
+        Color32::from_rgb(20, 24, 34)
+    } else {
+        Color32::from_rgb(232, 236, 245)
+    };
+    style.visuals.faint_bg_color = if dark {
+        Color32::from_rgb(35, 40, 52)
+    } else {
+        Color32::from_rgb(238, 241, 247)
+    };
     style.visuals.window_fill = surface;
     style.visuals.override_text_color = Some(text);
     style.visuals.widgets.inactive.bg_fill = elevated;
@@ -129,13 +145,20 @@ pub fn chrome(dark: bool, translucent: bool) -> Color32 {
     }
 }
 
-pub fn dock_icon(ui: &mut egui::Ui, panel: Panel, running: bool, size: f32, reduced_motion: bool) -> egui::Response {
+pub fn dock_icon(
+    ui: &mut egui::Ui,
+    panel: Panel,
+    running: bool,
+    size: f32,
+    reduced_motion: bool,
+) -> egui::Response {
     let (rect, response) =
         ui.allocate_exact_size(egui::vec2(size + 16.0, size + 22.0), egui::Sense::click());
     let hover = if reduced_motion {
         0.0
     } else {
-        ui.ctx().animate_bool_with_time(response.id, response.hovered(), 0.16)
+        ui.ctx()
+            .animate_bool_with_time(response.id, response.hovered(), 0.16)
     };
     let visual_size = size + hover * 12.0;
     let tile = egui::Rect::from_center_size(
@@ -202,32 +225,61 @@ pub fn file_icon(ui: &egui::Ui, rect: egui::Rect, kind: &str, path: &std::path::
     let size = rect.width().min(rect.height());
     let origin = rect.center() - egui::vec2(size, size) * 0.5;
     let point = |x: f32, y: f32| origin + egui::vec2(x, y) * size;
-    let bounds = |x: f32, y: f32, w: f32, h: f32| {
-        egui::Rect::from_min_max(point(x, y), point(x + w, y + h))
-    };
+    let bounds =
+        |x: f32, y: f32, w: f32, h: f32| egui::Rect::from_min_max(point(x, y), point(x + w, y + h));
     if kind == "Folder" {
-        painter.rect_filled(bounds(0.08, 0.17, 0.39, 0.26), 3, Color32::from_rgb(64, 126, 205));
-        painter.rect_filled(bounds(0.08, 0.29, 0.84, 0.58), 4, Color32::from_rgb(91, 158, 234));
+        painter.rect_filled(
+            bounds(0.08, 0.17, 0.39, 0.26),
+            3,
+            Color32::from_rgb(64, 126, 205),
+        );
+        painter.rect_filled(
+            bounds(0.08, 0.29, 0.84, 0.58),
+            4,
+            Color32::from_rgb(91, 158, 234),
+        );
         painter.line_segment(
             [point(0.14, 0.33), point(0.86, 0.33)],
             Stroke::new(1.0_f32, Color32::from_white_alpha(125)),
         );
     } else {
-        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_ascii_lowercase();
+        let ext = path
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
         let accent = match ext.as_str() {
             "png" | "jpg" | "jpeg" | "webp" => Color32::from_rgb(122, 100, 190),
             "rs" | "js" | "ts" | "py" | "toml" => Color32::from_rgb(65, 117, 190),
             "pdf" => Color32::from_rgb(193, 78, 83),
             _ => Color32::from_rgb(117, 129, 151),
         };
-        painter.rect_filled(bounds(0.18, 0.06, 0.64, 0.86), 3, Color32::from_rgb(242, 245, 251));
-        painter.rect_stroke(bounds(0.18, 0.06, 0.64, 0.86), 3, Stroke::new(0.8_f32, accent), egui::StrokeKind::Inside);
+        painter.rect_filled(
+            bounds(0.18, 0.06, 0.64, 0.86),
+            3,
+            Color32::from_rgb(242, 245, 251),
+        );
+        painter.rect_stroke(
+            bounds(0.18, 0.06, 0.64, 0.86),
+            3,
+            Stroke::new(0.8_f32, accent),
+            egui::StrokeKind::Inside,
+        );
         for y in [0.37, 0.49] {
-            painter.line_segment([point(0.3, y), point(0.68, y)], Stroke::new(1.0_f32, accent));
+            painter.line_segment(
+                [point(0.3, y), point(0.68, y)],
+                Stroke::new(1.0_f32, accent),
+            );
         }
         if size >= 32.0 {
             let label: String = ext.chars().take(4).collect::<String>().to_uppercase();
-            painter.text(point(0.5, 0.73), egui::Align2::CENTER_CENTER, label, egui::FontId::proportional(9.0), accent);
+            painter.text(
+                point(0.5, 0.73),
+                egui::Align2::CENTER_CENTER,
+                label,
+                egui::FontId::proportional(9.0),
+                accent,
+            );
         }
     }
 }
