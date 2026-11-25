@@ -4,3 +4,5 @@ AERA uses quiet, architectural graphite and porcelain surfaces, a restrained tea
 
 ## Desktop interaction grammar
 Use familiar macOS-inspired top menu and dock layout, with compact window controls for close/minimize/maximize. Keep AERA's own colors, typography and identity. Top bar and dock disappear in maximized presentation; restore remains visible. Workspace buttons indicate active desktop and minimized apps remain identifiable in the dock. No copied Apple assets.
+
+Liquid Glass is a selectively applied GPU material, not a global opacity effect. Keep application text sharp, provide opaque fallback and respect reduced motion. See GLASS.md for the rendering and screenshot contract.
