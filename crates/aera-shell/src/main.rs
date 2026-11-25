@@ -6,6 +6,8 @@ mod design;
 mod disks;
 mod files;
 mod glass;
+mod icons;
+use icons::Icon;
 
 use std::path::PathBuf;
 
@@ -19,6 +21,7 @@ struct Shell {
     glass_quality: f32,
     reduced_motion: bool,
     zoom: f32,
+    compact_dock: bool,
     directory: Option<PathBuf>,
     entries: Vec<files::Entry>,
     volumes: Vec<disks::Volume>,
@@ -35,12 +38,13 @@ impl Default for Shell {
             desktop: Desktop::default(),
             query: String::new(),
             launcher_open: false,
-            dark: true,
+            dark: false,
             glass_enabled: true,
             glass_available: false,
             glass_quality: 0.65,
             reduced_motion: false,
             zoom: 1.0,
+            compact_dock: true,
             directory: std::env::current_dir().ok(),
             entries: Vec::new(),
             volumes: Vec::new(),
@@ -131,7 +135,7 @@ impl Shell {
                 }
                 ui.separator();
                 ui.strong("Locations");
-                if ui.button("Volumes").clicked() {
+                if icons::row(ui, Icon::Disks, "Volumes").clicked() {
                     self.launch(Panel::Disks);
                 }
             });
@@ -298,6 +302,7 @@ impl Shell {
             Panel::Files => self.files_view(ui),
             Panel::Disks => self.disks_view(ui),
             Panel::Settings => {
+                ui.heading("Appearance");
                 if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
                     design::apply(ctx, self.dark);
                 }
@@ -308,6 +313,7 @@ impl Shell {
                     ctx.set_zoom_factor(self.zoom);
                 }
                 ui.separator();
+                ui.checkbox(&mut self.compact_dock, "Compact dock");
                 ui.heading("Liquid Glass");
                 ui.add_enabled(
                     self.glass_available,
@@ -321,12 +327,26 @@ impl Shell {
                 }
                 ui.separator();
                 ui.heading("Storage & system");
-                if ui.button("Open Disks").clicked() {
+                if icons::row(ui, Icon::Disks, "Storage").clicked() {
                     self.launch(Panel::Disks);
                 }
-                if ui.button("System information").clicked() {
+                if icons::row(ui, Icon::About, "System information").clicked() {
                     self.launch(Panel::About);
                 }
+                ui.collapsing("System icon library", |ui| {
+                    ui.horizontal_wrapped(|ui| {
+                        for icon in Icon::ALL {
+                            ui.vertical(|ui| {
+                                let (rect, _) = ui.allocate_exact_size(
+                                    egui::vec2(32.0, 32.0),
+                                    egui::Sense::hover(),
+                                );
+                                icons::paint(ui, rect, icon, true);
+                                ui.small(icon.label());
+                            });
+                        }
+                    });
+                });
                 ui.label("Session settings only");
             }
             Panel::About => {
@@ -433,7 +453,7 @@ impl eframe::App for Shell {
             ui.horizontal(|ui| {
                 ui.menu_button("A E R A", |ui| {
                     for panel in Panel::ALL {
-                        if ui.button(panel.title()).clicked() {
+                        if icons::row(ui, Icon::app(panel), panel.title()).clicked() {
                             self.launch(panel);
                             ui.close_menu();
                         }
@@ -447,7 +467,7 @@ impl eframe::App for Shell {
                         }
                     }
                 });
-                if ui.button("Search").clicked() {
+                if icons::row(ui, Icon::Search, "Search").clicked() {
                     self.launcher_open = !self.launcher_open;
                 }
                 ui.separator();
@@ -494,7 +514,12 @@ impl eframe::App for Shell {
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 4.0;
                             for panel in Panel::ALL {
-                                if design::dock_icon(ui, panel, self.desktop.is_open(panel)).clicked() {
+                                if design::dock_icon(
+                                    ui,
+                                    panel,
+                                    self.desktop.is_open(panel),
+                                    if self.compact_dock { 32.0 } else { 40.0 },
+                                ).clicked() {
                                     self.launch(panel);
                                 }
                             }
@@ -550,7 +575,7 @@ fn main() -> eframe::Result {
         "AERA Shell",
         options,
         Box::new(|cc| {
-            let dark = std::env::var_os("AERA_LIGHT").is_none();
+            let dark = std::env::var_os("AERA_DARK").is_some() && std::env::var_os("AERA_LIGHT").is_none();
             design::apply(&cc.egui_ctx, dark);
             let available =
                 cc.wgpu_render_state.is_some() && std::env::var_os("AERA_GLASS_OFF").is_none();
