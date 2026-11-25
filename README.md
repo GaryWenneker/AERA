@@ -21,3 +21,6 @@ Launch with `cargo run -p aera-shell --release`. A native resizable desktop wind
 
 ## Standalone OS engineering preview
 See [visual design](DESIGN.md) and [guest boot instructions](BOOT.md). The experimental guest CI builds an x86-64 Debian-backed qcow2 image, direct-boot kernel/initramfs and runs a QEMU readiness test. Artifacts are published only after the smoke test passes. Native Apple Silicon, UEFI, custom compositor and Rust kernel are not yet supported. No successful guest boot or visual verification claimed yet.
+
+## Desktop system applications
+See [DESKTOP.md](DESKTOP.md). Files supports real directory navigation, selection, file types and sizes; Disks shows actual mounted volumes and capacity and opens them in Files. Both are read-only previews. Settings links to storage and system information; the desktop app grid and dock launch these panels. No partitioning, formatting, mount changes or file mutations are implemented. Launch with `cargo run -p aera-shell --release`.
