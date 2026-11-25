@@ -7,3 +7,5 @@ rust-version.workspace = true
 [dependencies]
 aera-core = { path = "../aera-core" }
 eframe = { version = "=0.31.1", default-features = false, features = ["wgpu", "default_fonts", "accesskit", "x11", "wayland"] }
+
+sysinfo = { version = "=0.33.1", default-features = false, features = ["disk"] }
