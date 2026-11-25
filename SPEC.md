@@ -44,3 +44,6 @@ P2a acceptance: native window launches, dock opens independent internal panels, 
 - [ ] AERA-025 Consistent AERA visual tokens and procedural wallpaper per DESIGN.md, dark/light contrast, no perpetual animation.
 - [ ] AERA-026 Build a disposable x86-64 Linux-backed qcow2 guest and export kernel/initramfs; boot without host OS application dependencies inside guest; start AERA graphical session as non-root.
 - [ ] AERA-027 Serial boot smoke validates X server and shell window; manual screenshot and input verification required. No host disk writes or network by default. ARM64 and UEFI remain separate gates.
+
+## Desktop system applications
+Requirements AERA-028–034 and screen-level acceptance criteria are maintained in [DESKTOP.md](DESKTOP.md), a normative extension of this specification. Files and Disks are first-class system applications, not visual placeholders. Read-only inspection precedes privileged or destructive operations.
