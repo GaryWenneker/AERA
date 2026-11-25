@@ -42,7 +42,9 @@ fn destination(directory: &Path, name: &str) -> std::io::Result<PathBuf> {
         || name.trim() != name
         || name.ends_with('.')
         || reserved
-        || name.chars().any(|c| c.is_control() || r#"/\:*?"<>|"#.contains(c))
+        || name
+            .chars()
+            .any(|c| c.is_control() || r#"/\:*?"<>|"#.contains(c))
     {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
