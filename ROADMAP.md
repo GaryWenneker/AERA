@@ -24,3 +24,13 @@ Each phase requires reviewed spec, test evidence and a checkpoint commit before 
 
 ## Change control
 Every implementation PR references requirement IDs, updates affected specs and plans, and supplies test evidence. Changes to specs reopen affected checks; do not silently relax thresholds. Record alternatives and tradeoffs in ADRs. Version history is Git commits, with tags for approved baselines.
+
+## P2 GUI work breakdown (P2a may proceed alongside P1)
+- [ ] P2a: native hosted Rust shell, status bar, dock, internal windows, search, theme, zoom, read-only file listing and headless model tests (AERA-015–019 partial).
+- [ ] P2b: extract reusable AERA UI components, persistent settings, async file navigation, keyboard/screen reader and contrast audits.
+- [ ] P2c: window manager policies, snapping/tiling, workspaces and per-monitor DPI.
+- [ ] P2d: native guest compositor and input/display adapters; external app surfaces; no host global window takeover.
+- [ ] P2e: GPU backend smoke matrix, performance traces, artifact packaging, x86-64/ARM64 tests and accessibility review.
+- [ ] P2f: verify all AERA-015–024 acceptance criteria with evidence before claiming GUI phase complete.
+
+Setup: add crates/aera-shell (native binary + testable state); use eframe/egui with wgpu, default fonts, AccessKit and Linux X11/Wayland support. Dependency is justified by native event loop, GPU rendering and accessibility foundations; audit resolved transitive graph and license before release. No custom compositor dependency in P2a. CI adds Linux build packages as required. Commit spec before code and retain unchecked criteria until actual evidence.
