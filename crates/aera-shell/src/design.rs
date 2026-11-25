@@ -31,6 +31,8 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
     style.text_styles.insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
     style.text_styles.insert(egui::TextStyle::Heading, egui::FontId::proportional(20.0));
     style.visuals.panel_fill = canvas;
+    style.visuals.extreme_bg_color = if dark { Color32::from_rgb(20, 24, 34) } else { Color32::from_rgb(232, 236, 245) };
+    style.visuals.faint_bg_color = if dark { Color32::from_rgb(35, 40, 52) } else { Color32::from_rgb(238, 241, 247) };
     style.visuals.window_fill = surface;
     style.visuals.override_text_color = Some(text);
     style.visuals.widgets.inactive.bg_fill = elevated;
@@ -60,6 +62,7 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
     };
     style.spacing.item_spacing = egui::vec2(8.0, 8.0);
     style.spacing.button_padding = egui::vec2(10.0, 5.0);
+    style.spacing.interact_size = egui::vec2(36.0, 26.0);
     ctx.set_style(style);
 }
 
@@ -109,8 +112,8 @@ pub fn wallpaper(ui: &egui::Ui, dark: bool) {
 
 pub fn chrome(dark: bool, translucent: bool) -> Color32 {
     match (dark, translucent) {
-        (true, true) => Color32::from_rgba_unmultiplied(27, 36, 47, 218),
-        (false, true) => Color32::from_rgba_unmultiplied(245, 249, 251, 230),
+        (true, true) => Color32::from_rgba_unmultiplied(30, 35, 48, 185),
+        (false, true) => Color32::from_rgba_unmultiplied(245, 249, 251, 185),
         (true, false) => Color32::from_rgb(27, 36, 47),
         (false, false) => Color32::from_rgb(245, 249, 251),
     }
@@ -164,9 +167,9 @@ pub fn section(ui: &mut egui::Ui, title: &str, content: impl FnOnce(&mut egui::U
     ui.label(egui::RichText::new(title).size(15.0).strong());
     let dark = ui.visuals().dark_mode;
     let fill = if dark {
-        Color32::from_white_alpha(12)
+        Color32::from_rgb(34, 40, 52)
     } else {
-        Color32::from_white_alpha(150)
+        Color32::from_rgb(255, 255, 255)
     };
     let edge = if dark {
         Color32::from_white_alpha(20)
