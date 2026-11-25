@@ -5,6 +5,7 @@ use eframe::egui::{self, Color32, RichText};
 mod design;
 mod disks;
 mod files;
+mod glass;
 
 use std::path::PathBuf;
 
@@ -12,6 +13,10 @@ struct Shell {
     desktop: Desktop,
     query: String,
     dark: bool,
+    glass_enabled: bool,
+    glass_available: bool,
+    glass_quality: f32,
+    reduced_motion: bool,
     zoom: f32,
     directory: Option<PathBuf>,
     entries: Vec<files::Entry>,
@@ -29,6 +34,10 @@ impl Default for Shell {
             desktop: Desktop::default(),
             query: String::new(),
             dark: true,
+            glass_enabled: true,
+            glass_available: false,
+            glass_quality: 0.65,
+            reduced_motion: false,
             zoom: 1.0,
             directory: std::env::current_dir().ok(),
             entries: Vec::new(),
@@ -264,6 +273,17 @@ impl Shell {
                     ctx.set_zoom_factor(self.zoom);
                 }
                 ui.separator();
+                ui.heading("Liquid Glass");
+                ui.add_enabled(
+                    self.glass_available,
+                    egui::Checkbox::new(&mut self.glass_enabled, "Enable GPU glass"),
+                );
+                ui.add(
+                    egui::Slider::new(&mut self.glass_quality, 0.0..=1.0).text("Blur quality"),
+                );
+                ui.checkbox(&mut self.reduced_motion, "Reduce motion");
+                ui.label("Wallpaper-only optical preview; opaque application surfaces.");
+                ui.separator();
                 ui.heading("Storage & system");
                 if ui.button("Open Disks").clicked() {
                     self.launch(Panel::Disks);
@@ -442,6 +462,10 @@ impl eframe::App for Shell {
             ui.vertical_centered(|ui| {
                 ui.label(RichText::new("A E R A").size(48.0).strong());
                 ui.label("One OS. Any machine.");
+                if self.glass_enabled && self.glass_available {
+                    ui.add_space(12.0);
+                    glass::preview(ui, self.dark, self.glass_quality, self.reduced_motion);
+                }
                 ui.add_space(20.0);
                 ui.horizontal_wrapped(|ui| {
                     for panel in Panel::ALL {
@@ -501,7 +525,18 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             design::apply(&cc.egui_ctx, true);
-            Ok(Box::new(Shell::default()))
+            let available = cc.wgpu_render_state.is_some()
+                && std::env::var_os("AERA_GLASS_OFF").is_none();
+            if available {
+                if let Some(state) = &cc.wgpu_render_state {
+                    glass::install(state);
+                }
+            }
+            Ok(Box::new(Shell {
+                glass_available: available,
+                glass_enabled: available,
+                ..Shell::default()
+            }))
         }),
     )
 }
