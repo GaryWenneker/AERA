@@ -1,4 +1,5 @@
 use aera_shell::Panel;
+use crate::icons::{self, Icon};
 use eframe::egui::{self, Color32, Stroke};
 
 pub fn apply(ctx: &egui::Context, dark: bool) {
@@ -14,15 +15,15 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
             Color32::from_rgb(27, 34, 42),
             Color32::from_rgb(39, 49, 59),
             Color32::from_rgb(232, 237, 242),
-            Color32::from_rgb(115, 215, 196),
+            Color32::from_rgb(124, 156, 240),
         )
     } else {
         (
-            Color32::from_rgb(240, 243, 245),
+            Color32::from_rgb(245, 246, 250),
             Color32::WHITE,
             Color32::from_rgb(221, 229, 233),
             Color32::from_rgb(32, 43, 50),
-            Color32::from_rgb(19, 108, 96),
+            Color32::from_rgb(58, 96, 187),
         )
     };
     style.visuals.panel_fill = canvas;
@@ -34,9 +35,9 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
     style.visuals.window_corner_radius = egui::CornerRadius::same(12);
     style.visuals.menu_corner_radius = egui::CornerRadius::same(10);
     style.visuals.selection.bg_fill = if dark {
-        Color32::from_rgb(43, 83, 91)
+        Color32::from_rgb(51, 69, 111)
     } else {
-        Color32::from_rgb(187, 222, 217)
+        Color32::from_rgb(211, 222, 248)
     };
     style.spacing.item_spacing = egui::vec2(12.0, 8.0);
     style.spacing.button_padding = egui::vec2(16.0, 8.0);
@@ -47,9 +48,9 @@ pub fn wallpaper(ui: &egui::Ui, dark: bool) {
     let rect = ui.max_rect();
     let painter = ui.painter_at(rect);
     let (a, b) = if dark {
-        ([13.0, 23.0, 36.0], [47.0, 99.0, 105.0])
+        ([13.0, 23.0, 36.0], [68.0, 72.0, 121.0])
     } else {
-        ([219.0, 232.0, 241.0], [151.0, 194.0, 195.0])
+        ([231.0, 237.0, 251.0], [177.0, 166.0, 225.0])
     };
     let mut mesh = egui::Mesh::default();
     for y in 0..=20 {
@@ -57,7 +58,11 @@ pub fn wallpaper(ui: &egui::Ui, dark: bool) {
             let u = x as f32 / 20.0;
             let v = y as f32 / 20.0;
             let wave = (u * 3.0 + v * 2.4).sin().mul_add(0.38, 0.5);
-            let color = |i: usize| (a[i] + (b[i] - a[i]) * wave) as u8;
+            let warmth = if dark { 0.0 } else { (u * v).powf(2.0) * 0.65 };
+            let peach = [242.0, 194.0, 178.0];
+            let color = |i: usize| {
+                ((a[i] + (b[i] - a[i]) * wave) * (1.0 - warmth) + peach[i] * warmth) as u8
+            };
             mesh.colored_vertex(
                 egui::pos2(rect.left() + u * rect.width(), rect.top() + v * rect.height()),
                 Color32::from_rgb(color(0), color(1), color(2)),
@@ -89,62 +94,25 @@ pub fn chrome(dark: bool, translucent: bool) -> Color32 {
     }
 }
 
-pub fn dock_icon(ui: &mut egui::Ui, panel: Panel, running: bool) -> egui::Response {
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(52.0, 60.0), egui::Sense::click());
+pub fn dock_icon(ui: &mut egui::Ui, panel: Panel, running: bool, size: f32) -> egui::Response {
+    let (rect, response) = ui.allocate_exact_size(
+        egui::vec2(size + 8.0, size + 12.0),
+        egui::Sense::click(),
+    );
     let tile = egui::Rect::from_center_size(
         rect.center() - egui::vec2(0.0, 4.0),
-        egui::vec2(44.0, 44.0),
+        egui::vec2(size, size),
     );
-    let p = ui.painter();
-    let color = match panel {
-        Panel::Files => Color32::from_rgb(64, 143, 210),
-        Panel::Disks => Color32::from_rgb(91, 115, 135),
-        Panel::Settings => Color32::from_rgb(110, 125, 146),
-        Panel::About => Color32::from_rgb(52, 141, 134),
-    };
-    p.rect_filled(tile, 12.0, color);
+    icons::paint(ui, tile, Icon::app(panel), true);
     if response.hovered() {
-        p.rect_filled(tile, 12.0, Color32::from_white_alpha(35));
-    }
-    let c = tile.center();
-    let white = Color32::WHITE;
-    let stroke = Stroke::new(2.0_f32, white);
-    match panel {
-        Panel::Files => {
-            let folder = egui::Rect::from_center_size(c + egui::vec2(0.0, 2.0), egui::vec2(27.0, 17.0));
-            p.rect_filled(folder, 3.0, white);
-            p.rect_filled(
-                egui::Rect::from_min_size(folder.min - egui::vec2(0.0, 4.0), egui::vec2(12.0, 7.0)),
-                2.0,
-                white,
-            );
-        }
-        Panel::Disks => {
-            p.rect_stroke(
-                egui::Rect::from_center_size(c, egui::vec2(25.0, 26.0)),
-                5.0,
-                stroke,
-                egui::StrokeKind::Inside,
-            );
-            p.line_segment([c + egui::vec2(-10.0, 5.0), c + egui::vec2(10.0, 5.0)], stroke);
-            p.circle_filled(c + egui::vec2(6.0, 9.0), 1.5, white);
-        }
-        Panel::Settings => {
-            p.circle_stroke(c, 10.0, Stroke::new(3.0_f32, white));
-            p.circle_filled(c, 3.0, white);
-            for n in 0..8 {
-                let angle = n as f32 * std::f32::consts::TAU / 8.0;
-                let d = egui::vec2(angle.cos(), angle.sin());
-                p.line_segment([c + d * 10.0, c + d * 14.0], stroke);
-            }
-        }
-        Panel::About => {
-            p.circle_stroke(c, 13.0, stroke);
-            p.text(c, egui::Align2::CENTER_CENTER, "i", egui::FontId::proportional(24.0), white);
-        }
+        ui.painter().rect_filled(tile, 8, Color32::from_white_alpha(28));
     }
     if running {
-        p.circle_filled(egui::pos2(c.x, rect.bottom() - 3.0), 2.0, ui.visuals().text_color());
+        ui.painter().circle_filled(
+            egui::pos2(rect.center().x, rect.bottom() - 2.0),
+            1.8,
+            ui.visuals().text_color(),
+        );
     }
     response.on_hover_text(panel.title())
 }
