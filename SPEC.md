@@ -69,3 +69,7 @@ AERA-053 requires a desktop-first visual correction per DESIGN.md and GLASS.md, 
 
 - [ ] AERA-059 Interactive PTY terminal with persistent shell, VT grid, ANSI colors, keyboard input and terminal resize; opaque reading surface, host/guest indication. Validate on real macOS/Linux/Windows; full escape protocol, selection and tabs follow.
 - [ ] AERA-060 Settings navigation separates Appearance, Wallpaper, Glass and System; opaque content and restrained translucent chrome prevent overlapping text bleed.
+
+- [ ] AERA-061 Finder-inspired Files with icon/list mode, navigation history, full-width rows, human-readable sizes, modification metadata and no nested scrollbars.
+- [ ] AERA-062 Floating iOS-inspired dock with stable click targets, animated hover scaling, running indicators and restore/focus behavior.
+- [ ] AERA-063 Wallpaper gallery with actual thumbnails, local photo import and bundled photographic assets with documented provenance. No generated desktop screenshots.
