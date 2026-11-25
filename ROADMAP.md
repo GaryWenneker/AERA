@@ -82,3 +82,6 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 
 ### Fresh visual system
 - [ ] AERA-054 implement shared vector icon registry, light-default palette, compact dock sizing and icon-labelled menus/settings. Validate live screenshots and interaction.
+
+### Wallpaper increment
+- [ ] AERA-055 built-in artwork and local PNG/JPEG/WebP, Settings selection, cover/fit, GPU texture caching; validate screenshot and decode limits. Follow with persistent preferences and native file picker.
