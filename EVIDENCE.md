@@ -1,3 +1,6 @@
 # Validation evidence
 
 Initial specification drafted autonomously; separate human approval not obtained. No benchmark or hardware qualification is claimed. P0 tests, lint, format, CI and release build results pending; update this file only from observed runs. Map AERA-012 to core target tests; AERA-013 to CLI integration tests; AERA-014 to CI matrix. Coverage, mutation and independent review pending. No third-party dependencies planned for P0.
+
+## P2a shell increment
+P0 CI run 45591757048 failed at rustfmt on all three hosts; lint/test/build skipped. Addressed the visible formatting defect in core; verification pending. P2a adds native shell, state tests (search_filters_and_normalizes, windows_are_independent) and GUI dependency. Tests are authored, not executed locally: no Rust toolchain in this environment. RED/green, coverage, mutation, dependency audit, lockfile, native display smoke, GPU backend and performance measurement pending. Spec approval: not separately obtained (autonomous run). No hardware support or production readiness claimed. AERA-015–019 partial implementation only; all acceptance checks remain open. File listing is synchronous and restricted to first 200 entries, with no navigation yet.
