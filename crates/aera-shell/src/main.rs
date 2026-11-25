@@ -25,6 +25,7 @@ struct Shell {
     query: String,
     launcher_open: bool,
     dark: bool,
+    accent_index: usize,
     glass_enabled: bool,
     glass_available: bool,
     glass_quality: f32,
@@ -61,6 +62,7 @@ impl Default for Shell {
             query: String::new(),
             launcher_open: false,
             dark: false,
+            accent_index: 0,
             glass_enabled: true,
             glass_available: false,
             glass_quality: 0.65,
@@ -430,7 +432,7 @@ impl Shell {
                         match self.settings_page {
                     0 => design::section(ui, "Appearance", |ui| {
                 if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
-                    design::apply(ctx, self.dark);
+                    design::apply(ctx, self.dark, self.accent_index);
                 }
                 if ui
                     .add(egui::Slider::new(&mut self.zoom, 0.8..=1.6).text("UI zoom"))
@@ -439,6 +441,14 @@ impl Shell {
                     ctx.set_zoom_factor(self.zoom);
                 }
                 ui.separator();
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Accent");
+                    for (index, name) in design::ACCENTS.iter().enumerate() {
+                        if ui.selectable_value(&mut self.accent_index, index, *name).changed() {
+                            design::apply(ctx, self.dark, self.accent_index);
+                        }
+                    }
+                });
                 ui.checkbox(&mut self.compact_dock, "Compact dock");
                 ui.add(
                     egui::Slider::new(&mut self.window_opacity, 65..=100)
@@ -823,7 +833,7 @@ fn main() -> eframe::Result {
         Box::new(|cc| {
             let dark =
                 std::env::var_os("AERA_DARK").is_some() && std::env::var_os("AERA_LIGHT").is_none();
-            design::apply(&cc.egui_ctx, dark);
+            design::apply(&cc.egui_ctx, dark, 0);
             let available =
                 cc.wgpu_render_state.is_some() && std::env::var_os("AERA_GLASS_OFF").is_none();
             if available {
