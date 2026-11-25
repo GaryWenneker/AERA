@@ -85,8 +85,8 @@ impl Session {
         let avail = ui.available_size().max(egui::vec2(40.0, 30.0));
         let cols = (avail.x / width).floor().clamp(2.0, 240.0) as u16;
         let rows = (avail.y / height).floor().clamp(2.0, 100.0) as u16;
-        if self.size != (rows, cols) {
-            if self
+        if self.size != (rows, cols)
+            && self
                 .master
                 .resize(PtySize {
                     rows,
@@ -95,10 +95,9 @@ impl Session {
                     pixel_height: 0,
                 })
                 .is_ok()
-            {
-                self.parser.set_size(rows, cols);
-                self.size = (rows, cols);
-            }
+        {
+            self.parser.set_size(rows, cols);
+            self.size = (rows, cols);
         }
         let (rect, response) = ui.allocate_exact_size(avail, egui::Sense::click());
         if response.clicked() {
