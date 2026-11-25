@@ -6,10 +6,11 @@ pub enum Panel {
     Disks,
     Settings,
     About,
+    Terminal,
 }
 
 impl Panel {
-    pub const ALL: [Self; 4] = [Self::Files, Self::Disks, Self::Settings, Self::About];
+    pub const ALL: [Self; 5] = [Self::Files, Self::Disks, Self::Settings, Self::About, Self::Terminal];
 
     pub fn title(self) -> &'static str {
         match self {
@@ -17,6 +18,7 @@ impl Panel {
             Self::Disks => "Disks",
             Self::Settings => "Settings",
             Self::About => "About",
+            Self::Terminal => "Terminal",
         }
     }
 }
@@ -40,7 +42,7 @@ pub enum WindowState {
 
 #[derive(Default)]
 struct Workspace {
-    windows: [WindowState; 4],
+    windows: [WindowState; 5],
 }
 
 pub struct Desktop {
