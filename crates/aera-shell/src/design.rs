@@ -2,14 +2,16 @@ use crate::icons::{self, Icon};
 use aera_shell::Panel;
 use eframe::egui::{self, Color32, Stroke};
 
-pub fn apply(ctx: &egui::Context, dark: bool) {
+pub const ACCENTS: [&str; 4] = ["Ocean", "Violet", "Rose", "Graphite"];
+
+pub fn apply(ctx: &egui::Context, dark: bool, accent_index: usize) {
     let mut style = (*ctx.style()).clone();
     style.visuals = if dark {
         egui::Visuals::dark()
     } else {
         egui::Visuals::light()
     };
-    let (canvas, surface, elevated, text, accent) = if dark {
+    let (canvas, surface, elevated, text, default_accent) = if dark {
         (
             Color32::from_rgb(16, 20, 25),
             Color32::from_rgb(27, 34, 42),
@@ -25,6 +27,15 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
             Color32::from_rgb(32, 43, 50),
             Color32::from_rgb(58, 96, 187),
         )
+    };
+    let accent = match (accent_index, dark) {
+        (1, true) => Color32::from_rgb(175, 155, 240),
+        (1, false) => Color32::from_rgb(111, 82, 183),
+        (2, true) => Color32::from_rgb(237, 148, 177),
+        (2, false) => Color32::from_rgb(173, 65, 103),
+        (3, true) => Color32::from_rgb(187, 195, 210),
+        (3, false) => Color32::from_rgb(83, 91, 112),
+        _ => default_accent,
     };
     style.text_styles.insert(egui::TextStyle::Body, egui::FontId::proportional(13.0));
     style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
@@ -55,11 +66,10 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
     style.visuals.selection.stroke = Stroke::new(1.0_f32, accent);
     style.visuals.window_corner_radius = egui::CornerRadius::same(16);
     style.visuals.menu_corner_radius = egui::CornerRadius::same(10);
-    style.visuals.selection.bg_fill = if dark {
-        Color32::from_rgb(51, 69, 111)
-    } else {
-        Color32::from_rgb(211, 222, 248)
-    };
+    let base: [u8; 3] = if dark { [30, 34, 44] } else { [247, 248, 252] };
+    let rgb = accent.to_array();
+    let mix = |i: usize| ((u16::from(base[i]) * 3 + u16::from(rgb[i])) / 4) as u8;
+    style.visuals.selection.bg_fill = Color32::from_rgb(mix(0), mix(1), mix(2));
     style.spacing.item_spacing = egui::vec2(8.0, 8.0);
     style.spacing.button_padding = egui::vec2(10.0, 5.0);
     style.spacing.interact_size = egui::vec2(36.0, 26.0);
