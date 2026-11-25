@@ -38,7 +38,12 @@ mod tests {
 
     #[test]
     fn unsupported_matrix() {
-        for (os, arch) in [("freebsd", "x86_64"), ("linux", "riscv64"), ("", ""), ("windows", "x86")] {
+        for (os, arch) in [
+            ("freebsd", "x86_64"),
+            ("linux", "riscv64"),
+            ("", ""),
+            ("windows", "x86"),
+        ] {
             assert!(!Target { os, arch }.hosted_eligible());
         }
     }
