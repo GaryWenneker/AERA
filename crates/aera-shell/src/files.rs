@@ -34,6 +34,23 @@ pub fn list(path: &Path) -> std::io::Result<Vec<Entry>> {
     Ok(entries)
 }
 
+pub fn display_size(size: Option<u64>) -> String {
+    let Some(bytes) = size else { return "—".into(); };
+    if bytes < 1024 {
+        return format!("{bytes} B");
+    }
+    let mut value = bytes as f64 / 1024.0;
+    let mut unit = "KB";
+    for next in ["MB", "GB", "TB"] {
+        if value < 1024.0 {
+            break;
+        }
+        value /= 1024.0;
+        unit = next;
+    }
+    format!("{value:.1} {unit}")
+}
+
 fn destination(directory: &Path, name: &str) -> std::io::Result<PathBuf> {
     let stem = name.split('.').next().unwrap_or("").to_ascii_uppercase();
     let reserved = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
