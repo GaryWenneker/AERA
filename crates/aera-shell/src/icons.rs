@@ -19,6 +19,7 @@ impl Icon {
             Panel::Disks => Self::Disks,
             Panel::Settings => Self::Settings,
             Panel::About => Self::About,
+            Panel::Terminal => Self::Terminal,
         }
     }
     pub fn label(self) -> &'static str {
