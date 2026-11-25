@@ -24,3 +24,6 @@ User screenshots show overlapping readable text through windows and settings ove
 
 ## Desktop redesign contract
 Dock: floating 56–68 logical px capsule, 32–40px icons with fixed hit targets, cursor magnification and reduced-motion fallback, running dots, app restore and focus. Files: 180px navigation rail, compact toolbar, icon/list modes, readable sizes, modification date, full-width selection, one scrolling content region and separate file actions. Wallpaper: visual thumbnail gallery, photo import, cover/fit, original photographic assets with provenance; no runtime network requirement. Actual screenshot review required.
+
+## Unified appearance and photographic pack
+The shared theme controls all shell surfaces, selection, typography, accent and spacing; use distinct opaque reading surfaces with restrained chrome. Three CC0 photographs are imported from Wikimedia Commons via os/fetch-wallpapers.py, attributed in assets/wallpapers/README.md and embedded when present at build time. Procedural fallback remains explicitly named as such. No network fetch at runtime or in Cargo build. Dock uses a centered stable capsule, animated icons, running dots; clicking an existing window requests focus. Files uses a shared theme, full-width icon/list selections, readable metadata and no technical debug labels. Verify screenshots before approval.
