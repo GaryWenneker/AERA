@@ -34,3 +34,10 @@ Every implementation PR references requirement IDs, updates affected specs and p
 - [ ] P2f: verify all AERA-015–024 acceptance criteria with evidence before claiming GUI phase complete.
 
 Setup: add crates/aera-shell (native binary + testable state); use eframe/egui with wgpu, default fonts, AccessKit and Linux X11/Wayland support. Dependency is justified by native event loop, GPU rendering and accessibility foundations; audit resolved transitive graph and license before release. No custom compositor dependency in P2a. CI adds Linux build packages as required. Commit spec before code and retain unchecked criteria until actual evidence.
+
+## P4a standalone preview (parallel to P2)
+- [ ] Define visual identity in DESIGN.md; implement theme and wallpaper.
+- [ ] Build Debian root filesystem, Linux kernel and minimal X11 session with AERA Shell as desktop; export qcow2/kernel/initramfs.
+- [ ] Boot QEMU in CI and validate serial readiness marker from actual shell window.
+- [ ] Capture GUI screenshot and verify input/shutdown manually; then add ARM64 guest and UEFI boot.
+Setup: disposable Linux CI builder; debootstrap, guestfish, qemu, Xorg/Openbox and Mesa software Vulkan. Existing Rust GUI dependency retained; no raw disk installation. Separate human approval pending.
