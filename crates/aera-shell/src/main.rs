@@ -251,60 +251,80 @@ impl Shell {
 
     fn app_content(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, panel: Panel) {
         match panel {
-        Panel::Files => self.files_view(ui),
-        Panel::Disks => self.disks_view(ui),
-        Panel::Settings => {
-            if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
-                design::apply(ctx, self.dark);
+            Panel::Files => self.files_view(ui),
+            Panel::Disks => self.disks_view(ui),
+            Panel::Settings => {
+                if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
+                    design::apply(ctx, self.dark);
+                }
+                if ui
+                    .add(egui::Slider::new(&mut self.zoom, 0.8..=1.6).text("UI zoom"))
+                    .changed()
+                {
+                    ctx.set_zoom_factor(self.zoom);
+                }
+                ui.separator();
+                ui.heading("Storage & system");
+                if ui.button("Open Disks").clicked() {
+                    self.launch(Panel::Disks);
+                }
+                if ui.button("System information").clicked() {
+                    self.launch(Panel::About);
+                }
+                ui.label("Session settings only");
             }
-            if ui
-                .add(egui::Slider::new(&mut self.zoom, 0.8..=1.6).text("UI zoom"))
-                .changed()
-            {
-                ctx.set_zoom_factor(self.zoom);
+            Panel::About => {
+                let target = aera_core::Target::current();
+                ui.heading("AERA");
+                ui.label("One OS. Any machine.");
+                ui.label(format!("{} / {}", target.os, target.arch));
+                ui.label(if guest_session() {
+                    "Standalone guest · wgpu requested"
+                } else {
+                    "Hosted prototype · wgpu requested"
+                });
+                ui.label("Hardware and compositor support not qualified.");
             }
-            ui.separator();
-            ui.heading("Storage & system");
-            if ui.button("Open Disks").clicked() {
-                self.launch(Panel::Disks);
-            }
-            if ui.button("System information").clicked() {
-                self.launch(Panel::About);
-            }
-            ui.label("Session settings only");
-        }
-        Panel::About => {
-            let target = aera_core::Target::current();
-            ui.heading("AERA");
-            ui.label("One OS. Any machine.");
-            ui.label(format!("{} / {}", target.os, target.arch));
-            ui.label(if guest_session() {
-                "Standalone guest · wgpu requested"
-            } else {
-                "Hosted prototype · wgpu requested"
-            });
-            ui.label("Hardware and compositor support not qualified.");
         }
     }
 
     fn window_controls(&mut self, ui: &mut egui::Ui, panel: Panel) {
         ui.horizontal(|ui| {
-            if ui.button(RichText::new("×").color(Color32::from_rgb(230, 95, 95)))
-                .on_hover_text("Close window").clicked()
+            if ui
+                .button(RichText::new("×").color(Color32::from_rgb(230, 95, 95)))
+                .on_hover_text("Close window")
+                .clicked()
             {
                 self.desktop.set_state(panel, WindowState::Closed);
             }
-            if ui.button(RichText::new("−").color(Color32::from_rgb(213, 163, 65)))
-                .on_hover_text("Minimize window").clicked()
+            if ui
+                .button(RichText::new("−").color(Color32::from_rgb(213, 163, 65)))
+                .on_hover_text("Minimize window")
+                .clicked()
             {
                 self.desktop.set_state(panel, WindowState::Minimized);
             }
             let maximized = self.desktop.state(panel) == WindowState::Maximized;
-            if ui.button(RichText::new(if maximized { "↙" } else { "□" })
-                .color(Color32::from_rgb(75, 180, 135)))
-                .on_hover_text(if maximized { "Restore window" } else { "Maximize window" }).clicked()
+            if ui
+                .button(
+                    RichText::new(if maximized { "↙" } else { "□" })
+                        .color(Color32::from_rgb(75, 180, 135)),
+                )
+                .on_hover_text(if maximized {
+                    "Restore window"
+                } else {
+                    "Maximize window"
+                })
+                .clicked()
             {
-                self.desktop.set_state(panel, if maximized { WindowState::Floating } else { WindowState::Maximized });
+                self.desktop.set_state(
+                    panel,
+                    if maximized {
+                        WindowState::Floating
+                    } else {
+                        WindowState::Maximized
+                    },
+                );
             }
             ui.strong(panel.title());
         });
@@ -331,7 +351,6 @@ impl Shell {
                 self.app_content(ctx, ui, panel);
             });
     }
-
 }
 
 impl eframe::App for Shell {
@@ -374,17 +393,21 @@ impl eframe::App for Shell {
                 });
                 ui.separator();
                 for index in 0..self.desktop.count() {
-                    if ui.selectable_label(
-                        self.desktop.active() == index,
-                        format!("{}", index + 1),
-                    ).clicked() {
+                    if ui
+                        .selectable_label(self.desktop.active() == index, format!("{}", index + 1))
+                        .clicked()
+                    {
                         self.desktop.switch(index);
                     }
                 }
-                if ui.add_enabled(
-                    self.desktop.count() < Desktop::MAX_WORKSPACES,
-                    egui::Button::new("+"),
-                ).on_hover_text("New desktop").clicked() {
+                if ui
+                    .add_enabled(
+                        self.desktop.count() < Desktop::MAX_WORKSPACES,
+                        egui::Button::new("+"),
+                    )
+                    .on_hover_text("New desktop")
+                    .clicked()
+                {
                     self.desktop.add_workspace();
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -399,8 +422,13 @@ impl eframe::App for Shell {
         egui::TopBottomPanel::bottom("dock").show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
                 for panel in Panel::ALL {
+                    let label = if self.desktop.state(panel) == WindowState::Minimized {
+                        format!("{} · minimized", panel.title())
+                    } else {
+                        panel.title().to_owned()
+                    };
                     if ui
-                        .selectable_label(self.desktop.is_open(panel), if self.desktop.state(panel) == WindowState::Minimized { format!("{} · minimized", panel.title()) } else { panel.title().to_owned() })
+                        .selectable_label(self.desktop.is_open(panel), label)
                         .clicked()
                     {
                         self.launch(panel);
