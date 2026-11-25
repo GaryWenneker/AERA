@@ -7,8 +7,8 @@ mod disks;
 mod files;
 mod glass;
 mod icons;
-mod terminal;
 mod pty_terminal;
+mod terminal;
 mod wallpaper;
 use icons::Icon;
 
@@ -152,7 +152,12 @@ impl Shell {
     }
 
     fn navigate_history(&mut self, forward: bool) {
-        let next = if forward { self.forward.last() } else { self.back.last() }.cloned();
+        let next = if forward {
+            self.forward.last()
+        } else {
+            self.back.last()
+        }
+        .cloned();
         let previous = self.directory.clone();
         if let Some(next) = next {
             if self.load_directory(next) {
@@ -229,10 +234,18 @@ impl Shell {
 
     fn files_content(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.add_enabled(!self.back.is_empty(), egui::Button::new("←")).on_hover_text("Back").clicked() {
+            if ui
+                .add_enabled(!self.back.is_empty(), egui::Button::new("←"))
+                .on_hover_text("Back")
+                .clicked()
+            {
                 self.navigate_history(false);
             }
-            if ui.add_enabled(!self.forward.is_empty(), egui::Button::new("→")).on_hover_text("Forward").clicked() {
+            if ui
+                .add_enabled(!self.forward.is_empty(), egui::Button::new("→"))
+                .on_hover_text("Forward")
+                .clicked()
+            {
                 self.navigate_history(true);
             }
             if ui.button("Home").clicked() {
@@ -262,7 +275,11 @@ impl Shell {
         }
         ui.separator();
         ui.horizontal(|ui| {
-            ui.add(egui::TextEdit::singleline(&mut self.file_filter).hint_text("Search this folder").desired_width(f32::INFINITY));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.file_filter)
+                    .hint_text("Search this folder")
+                    .desired_width(f32::INFINITY),
+            );
         });
         let mut next = None;
         let filter = self.file_filter.to_lowercase();
@@ -276,12 +293,11 @@ impl Shell {
                             if !name.to_lowercase().contains(&filter) {
                                 continue;
                             }
-                            let (rect, response) = ui.allocate_exact_size(
-                                egui::vec2(94.0, 82.0),
-                                egui::Sense::click(),
-                            );
+                            let (rect, response) = ui
+                                .allocate_exact_size(egui::vec2(94.0, 82.0), egui::Sense::click());
                             if self.selected.as_ref() == Some(&entry.path) {
-                                ui.painter().rect_filled(rect, 8, ui.visuals().selection.bg_fill);
+                                ui.painter()
+                                    .rect_filled(rect, 8, ui.visuals().selection.bg_fill);
                             }
                             let icon = egui::Rect::from_center_size(
                                 rect.center_top() + egui::vec2(0.0, 28.0),
@@ -289,7 +305,13 @@ impl Shell {
                             );
                             design::file_icon(ui, icon, entry.kind, &entry.path);
                             let short: String = name.chars().take(14).collect();
-                            ui.painter().text(rect.center_bottom() - egui::vec2(0.0, 12.0), egui::Align2::CENTER_CENTER, short, egui::FontId::proportional(12.0), ui.visuals().text_color());
+                            ui.painter().text(
+                                rect.center_bottom() - egui::vec2(0.0, 12.0),
+                                egui::Align2::CENTER_CENTER,
+                                short,
+                                egui::FontId::proportional(12.0),
+                                ui.visuals().text_color(),
+                            );
                             if response.clicked() {
                                 self.selected = Some(entry.path.clone());
                             }
@@ -315,10 +337,19 @@ impl Shell {
                         if !name.to_lowercase().contains(&filter) {
                             continue;
                         }
-                        let (rect, response) = ui.allocate_exact_size(egui::vec2(width, 30.0), egui::Sense::click());
+                        let (rect, response) =
+                            ui.allocate_exact_size(egui::vec2(width, 30.0), egui::Sense::click());
                         let selected = self.selected.as_ref() == Some(&entry.path);
                         if selected || response.hovered() {
-                            ui.painter().rect_filled(rect, 6, if selected { ui.visuals().selection.bg_fill } else { ui.visuals().faint_bg_color });
+                            ui.painter().rect_filled(
+                                rect,
+                                6,
+                                if selected {
+                                    ui.visuals().selection.bg_fill
+                                } else {
+                                    ui.visuals().faint_bg_color
+                                },
+                            );
                         }
                         let icon = egui::Rect::from_center_size(
                             rect.left_center() + egui::vec2(16.0, 0.0),
@@ -328,10 +359,31 @@ impl Shell {
                         let p = ui.painter();
                         let ink = ui.visuals().text_color();
                         let font = egui::FontId::proportional(13.0);
-                        let clip = egui::Rect::from_min_max(rect.min + egui::vec2(34.0, 0.0), egui::pos2(rect.left() + name_width, rect.bottom()));
-                        p.with_clip_rect(clip).text(rect.left_center() + egui::vec2(34.0, 0.0), egui::Align2::LEFT_CENTER, name.as_ref(), font.clone(), ink);
-                        p.text(rect.left_center() + egui::vec2(name_width + 5.0, 0.0), egui::Align2::LEFT_CENTER, entry.kind, font.clone(), ink);
-                        p.text(rect.right_center() - egui::vec2(6.0, 0.0), egui::Align2::RIGHT_CENTER, files::display_size(entry.size), font, ink);
+                        let clip = egui::Rect::from_min_max(
+                            rect.min + egui::vec2(34.0, 0.0),
+                            egui::pos2(rect.left() + name_width, rect.bottom()),
+                        );
+                        p.with_clip_rect(clip).text(
+                            rect.left_center() + egui::vec2(34.0, 0.0),
+                            egui::Align2::LEFT_CENTER,
+                            name.as_ref(),
+                            font.clone(),
+                            ink,
+                        );
+                        p.text(
+                            rect.left_center() + egui::vec2(name_width + 5.0, 0.0),
+                            egui::Align2::LEFT_CENTER,
+                            entry.kind,
+                            font.clone(),
+                            ink,
+                        );
+                        p.text(
+                            rect.right_center() - egui::vec2(6.0, 0.0),
+                            egui::Align2::RIGHT_CENTER,
+                            files::display_size(entry.size),
+                            font,
+                            ink,
+                        );
                         if response.clicked() {
                             self.selected = Some(entry.path.clone());
                         }
@@ -352,36 +404,35 @@ impl Shell {
         }
         ui.separator();
         ui.collapsing("File actions", |ui| {
-        ui.small("Create or copy in this folder without overwrite");
-        ui.horizontal(|ui| {
-            ui.label("New name");
-            ui.text_edit_singleline(&mut self.file_name);
-        });
-        ui.horizontal_wrapped(|ui| {
-            let ready = self.directory.is_some() && !self.file_name.is_empty();
-            if ui
-                .add_enabled(ready, egui::Button::new("New folder"))
-                .clicked()
-            {
-                self.file_action(0);
-            }
-            if ui
-                .add_enabled(ready, egui::Button::new("New file"))
-                .clicked()
-            {
-                self.file_action(1);
-            }
-            let copyable = self
-                .entries
-                .iter()
-                .any(|entry| entry.kind == "File" && self.selected.as_ref() == Some(&entry.path));
-            if ui
-                .add_enabled(ready && copyable, egui::Button::new("Copy selected"))
-                .clicked()
-            {
-                self.file_action(2);
-            }
-        });
+            ui.small("Create or copy in this folder without overwrite");
+            ui.horizontal(|ui| {
+                ui.label("New name");
+                ui.text_edit_singleline(&mut self.file_name);
+            });
+            ui.horizontal_wrapped(|ui| {
+                let ready = self.directory.is_some() && !self.file_name.is_empty();
+                if ui
+                    .add_enabled(ready, egui::Button::new("New folder"))
+                    .clicked()
+                {
+                    self.file_action(0);
+                }
+                if ui
+                    .add_enabled(ready, egui::Button::new("New file"))
+                    .clicked()
+                {
+                    self.file_action(1);
+                }
+                let copyable = self.entries.iter().any(|entry| {
+                    entry.kind == "File" && self.selected.as_ref() == Some(&entry.path)
+                });
+                if ui
+                    .add_enabled(ready && copyable, egui::Button::new("Copy selected"))
+                    .clicked()
+                {
+                    self.file_action(2);
+                }
+            });
         });
         if let Some(notice) = &self.file_notice {
             ui.label(notice);
@@ -437,7 +488,11 @@ impl Shell {
             Panel::Terminal => {
                 ui.horizontal(|ui| {
                     ui.strong("Shell");
-                    ui.small(if guest_session() { "Guest" } else { "Host · local user permissions" });
+                    ui.small(if guest_session() {
+                        "Guest"
+                    } else {
+                        "Host · local user permissions"
+                    });
                     if ui.button("Restart session").clicked() {
                         self.pty = None;
                         self.pty_error = None;
@@ -663,7 +718,9 @@ impl Shell {
         }
         let offset = panel as usize as f32 * 30.0;
         let workspace = self.desktop.active();
-        let alpha = if matches!(panel, Panel::Terminal | Panel::Settings | Panel::Files) { 255 } else if self.glass_enabled {
+        let alpha = if matches!(panel, Panel::Terminal | Panel::Settings | Panel::Files) {
+            255
+        } else if self.glass_enabled {
             (u16::from(self.window_opacity) * 255 / 100) as u8
         } else {
             255
@@ -678,7 +735,10 @@ impl Shell {
             .id(egui::Id::new(("app", workspace, panel as usize)))
             .default_pos([80.0 + offset, 80.0 + offset])
             .default_size(
-                if matches!(panel, Panel::Files | Panel::Disks | Panel::Terminal | Panel::Settings) {
+                if matches!(
+                    panel,
+                    Panel::Files | Panel::Disks | Panel::Terminal | Panel::Settings
+                ) {
                     [650.0, 380.0]
                 } else {
                     [380.0, 260.0]
@@ -705,7 +765,9 @@ impl Shell {
 impl eframe::App for Shell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.terminal.poll(ctx);
-        if let Some(session) = &mut self.pty { session.poll(); }
+        if let Some(session) = &mut self.pty {
+            session.poll();
+        }
         let (previous, next, escape) = ctx.input(|input| {
             let shortcut = input.modifiers.ctrl && input.modifiers.alt;
             (
@@ -792,13 +854,15 @@ impl eframe::App for Shell {
                     });
                 });
             });
-        egui::CentralPanel::default().frame(egui::Frame::new().fill(ctx.style().visuals.panel_fill)).show(ctx, |ui| {
-            if let Some(texture) = &self.wallpaper_texture {
-                wallpaper::paint(ui, texture, self.wallpaper_cover);
-            } else {
-                design::wallpaper(ui, self.dark);
-            }
-        });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::new().fill(ctx.style().visuals.panel_fill))
+            .show(ctx, |ui| {
+                if let Some(texture) = &self.wallpaper_texture {
+                    wallpaper::paint(ui, texture, self.wallpaper_cover);
+                } else {
+                    design::wallpaper(ui, self.dark);
+                }
+            });
         egui::Area::new(egui::Id::new("floating-dock"))
             .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -12.0))
             .order(egui::Order::Foreground)
@@ -806,7 +870,12 @@ impl eframe::App for Shell {
                 egui::Frame::new()
                     .fill(chrome)
                     .corner_radius(egui::CornerRadius::same(24))
-                    .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 1, color: Color32::from_black_alpha(45) })
+                    .shadow(egui::Shadow {
+                        offset: [0, 4],
+                        blur: 16,
+                        spread: 1,
+                        color: Color32::from_black_alpha(45),
+                    })
                     .stroke(egui::Stroke::new(1.0_f32, Color32::from_white_alpha(70)))
                     .inner_margin(egui::Margin::symmetric(12, 5))
                     .show(ui, |ui| {
