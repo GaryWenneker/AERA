@@ -32,6 +32,8 @@ struct Shell {
     compact_dock: bool,
     wallpaper_texture: Option<egui::TextureHandle>,
     wallpaper_choice: usize,
+    wallpaper_thumbs: Vec<egui::TextureHandle>,
+    icon_view: bool,
     wallpaper_path: String,
     wallpaper_cover: bool,
     wallpaper_error: Option<String>,
@@ -65,6 +67,8 @@ impl Default for Shell {
             compact_dock: true,
             wallpaper_texture: None,
             wallpaper_choice: 0,
+            wallpaper_thumbs: Vec::new(),
+            icon_view: true,
             wallpaper_path: String::new(),
             wallpaper_cover: true,
             wallpaper_error: None,
@@ -146,7 +150,7 @@ impl Shell {
     fn files_view(&mut self, ui: &mut egui::Ui) {
         ui.horizontal_top(|ui| {
             ui.vertical(|ui| {
-                ui.set_width(126.0);
+                ui.set_width(168.0);
                 ui.strong("Favorites");
                 for name in ["Home", "Desktop", "Documents", "Downloads", "Pictures"] {
                     if let Some(base) = home() {
@@ -187,6 +191,8 @@ impl Shell {
                     self.navigate(path.to_path_buf());
                 }
             }
+            ui.selectable_value(&mut self.icon_view, true, "Icons");
+            ui.selectable_value(&mut self.icon_view, false, "List");
             if ui.button("Refresh").clicked() {
                 self.refresh_files();
             }
@@ -206,39 +212,76 @@ impl Shell {
             ui.text_edit_singleline(&mut self.file_filter);
         });
         let mut next = None;
+        let filter = self.file_filter.to_lowercase();
         egui::ScrollArea::vertical()
-            .max_height(280.0)
+            .max_height((ui.available_height() - 110.0).max(90.0))
             .show(ui, |ui| {
-                egui::Grid::new("file-table").striped(true).show(ui, |ui| {
-                    ui.strong("Name");
-                    ui.strong("Type");
-                    ui.strong("Size (bytes)");
-                    ui.end_row();
-                    let filter = self.file_filter.to_lowercase();
-                    for entry in &self.entries {
-                        if !entry
-                            .name
-                            .to_string_lossy()
-                            .to_lowercase()
-                            .contains(&filter)
-                        {
-                            continue;
+                if self.icon_view {
+                    ui.horizontal_wrapped(|ui| {
+                        for entry in &self.entries {
+                            let name = entry.name.to_string_lossy();
+                            if !name.to_lowercase().contains(&filter) {
+                                continue;
+                            }
+                            let (rect, response) = ui.allocate_exact_size(
+                                egui::vec2(94.0, 82.0),
+                                egui::Sense::click(),
+                            );
+                            if self.selected.as_ref() == Some(&entry.path) {
+                                ui.painter().rect_filled(rect, 8, ui.visuals().selection.bg_fill);
+                            }
+                            let icon = egui::Rect::from_center_size(
+                                rect.center_top() + egui::vec2(0.0, 28.0),
+                                egui::vec2(43.0, 43.0),
+                            );
+                            if entry.kind == "Folder" {
+                                let blue = Color32::from_rgb(81, 146, 224);
+                                ui.painter().rect_filled(icon.shrink(3.0), 7, blue);
+                                ui.painter().rect_filled(
+                                    egui::Rect::from_min_size(icon.min + egui::vec2(3.0, -1.0), egui::vec2(20.0, 10.0)),
+                                    4,
+                                    blue,
+                                );
+                            } else {
+                                ui.painter().rect_filled(icon.shrink(5.0), 4, Color32::from_rgb(220, 226, 239));
+                                ui.painter().text(icon.center(), egui::Align2::CENTER_CENTER, "FILE", egui::FontId::proportional(9.0), Color32::from_rgb(65, 78, 105));
+                            }
+                            let short: String = name.chars().take(14).collect();
+                            ui.painter().text(rect.center_bottom() - egui::vec2(0.0, 12.0), egui::Align2::CENTER_CENTER, short, egui::FontId::proportional(12.0), ui.visuals().text_color());
+                            if response.clicked() {
+                                self.selected = Some(entry.path.clone());
+                            }
+                            if response.double_clicked() && entry.kind == "Folder" {
+                                next = Some(entry.path.clone());
+                            }
+                            response.on_hover_text(name.as_ref());
                         }
-                        let response = ui.selectable_label(
-                            self.selected.as_ref() == Some(&entry.path),
-                            entry.name.to_string_lossy(),
-                        );
-                        if response.clicked() {
-                            self.selected = Some(entry.path.clone());
-                        }
-                        if response.double_clicked() && entry.kind == "Folder" {
-                            next = Some(entry.path.clone());
-                        }
-                        ui.label(entry.kind);
-                        ui.label(entry.size.map_or_else(|| "-".into(), |n| n.to_string()));
+                    });
+                } else {
+                    egui::Grid::new("file-table").striped(true).min_col_width(72.0).show(ui, |ui| {
+                        ui.strong("Name");
+                        ui.strong("Kind");
+                        ui.strong("Size");
                         ui.end_row();
-                    }
-                });
+                        for entry in &self.entries {
+                            if !entry.name.to_string_lossy().to_lowercase().contains(&filter) {
+                                continue;
+                            }
+                            let response = ui.selectable_label(self.selected.as_ref() == Some(&entry.path), entry.name.to_string_lossy());
+                            if response.clicked() {
+                                self.selected = Some(entry.path.clone());
+                            }
+                            if response.double_clicked() && entry.kind == "Folder" {
+                                next = Some(entry.path.clone());
+                            }
+                            ui.label(entry.kind);
+                            ui.label(entry.size.map_or_else(|| "—".into(), |n| {
+                                if n < 1024 { format!("{n} B") } else if n < 1048576 { format!("{:.1} KB", n as f64 / 1024.0) } else { format!("{:.1} MB", n as f64 / 1048576.0) }
+                            }));
+                            ui.end_row();
+                        }
+                    });
+                }
             });
         if let Some(path) = next {
             self.navigate(path);
@@ -397,19 +440,39 @@ impl Shell {
                 );
                 }),
                     1 => design::section(ui, "Wallpaper", |ui| {
-                    for (index, name) in wallpaper::NAMES.iter().enumerate() {
-                        if ui
-                            .selectable_label(self.wallpaper_choice == index, *name)
-                            .clicked()
-                        {
-                            self.wallpaper_texture = Some(ctx.load_texture(
-                                "desktop-wallpaper",
+                    if self.wallpaper_thumbs.is_empty() {
+                        for index in 0..wallpaper::NAMES.len() {
+                            self.wallpaper_thumbs.push(ctx.load_texture(
+                                format!("wallpaper-thumb-{index}"),
                                 wallpaper::builtin(index),
                                 egui::TextureOptions::LINEAR,
                             ));
-                            self.wallpaper_choice = index;
-                            self.wallpaper_error = None;
                         }
+                    }
+                    let mut chosen = None;
+                    ui.horizontal_wrapped(|ui| {
+                        for (index, name) in wallpaper::NAMES.iter().enumerate() {
+                            ui.vertical(|ui| {
+                                let image = egui::Image::new(&self.wallpaper_thumbs[index])
+                                    .fit_to_exact_size(egui::vec2(112.0, 63.0))
+                                    .corner_radius(8)
+                                    .sense(egui::Sense::click());
+                                if ui.add(image).clicked()
+                                    || ui.selectable_label(self.wallpaper_choice == index, *name).clicked()
+                                {
+                                    chosen = Some(index);
+                                }
+                            });
+                        }
+                    });
+                    if let Some(index) = chosen {
+                        self.wallpaper_texture = Some(ctx.load_texture(
+                            "desktop-wallpaper",
+                            wallpaper::builtin(index),
+                            egui::TextureOptions::LINEAR,
+                        ));
+                        self.wallpaper_choice = index;
+                        self.wallpaper_error = None;
                     }
                     ui.label("Local image (PNG, JPEG, WebP)");
                     ui.text_edit_singleline(&mut self.wallpaper_path);
@@ -525,7 +588,7 @@ impl Shell {
         }
         let offset = panel as usize as f32 * 30.0;
         let workspace = self.desktop.active();
-        let alpha = if matches!(panel, Panel::Terminal | Panel::Settings) { 255 } else if self.glass_enabled {
+        let alpha = if matches!(panel, Panel::Terminal | Panel::Settings | Panel::Files) { 255 } else if self.glass_enabled {
             (u16::from(self.window_opacity) * 255 / 100) as u8
         } else {
             255
@@ -667,10 +730,10 @@ impl eframe::App for Shell {
             .show(ctx, |ui| {
                 egui::Frame::new()
                     .fill(chrome)
-                    .corner_radius(egui::CornerRadius::same(16))
+                    .corner_radius(egui::CornerRadius::same(24))
                     .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 1, color: Color32::from_black_alpha(45) })
                     .stroke(egui::Stroke::new(1.0_f32, Color32::from_white_alpha(70)))
-                    .inner_margin(egui::Margin::symmetric(10, 4))
+                    .inner_margin(egui::Margin::symmetric(12, 5))
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 4.0;
@@ -680,6 +743,7 @@ impl eframe::App for Shell {
                                     panel,
                                     self.desktop.is_open(panel),
                                     if self.compact_dock { 32.0 } else { 40.0 },
+                                    self.reduced_motion,
                                 )
                                 .clicked()
                                 {
