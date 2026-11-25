@@ -327,7 +327,8 @@ impl Shell {
             Panel::Files => self.files_view(ui),
             Panel::Disks => self.disks_view(ui),
             Panel::Settings => {
-                ui.heading("Appearance");
+                ui.heading("System Settings");
+                design::section(ui, "Appearance", |ui| {
                 if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
                     design::apply(ctx, self.dark);
                 }
@@ -344,7 +345,8 @@ impl Shell {
                         .suffix("%")
                         .text("Window opacity"),
                 );
-                ui.collapsing("Wallpaper", |ui| {
+                });
+                design::section(ui, "Wallpaper", |ui| {
                     for (index, name) in wallpaper::NAMES.iter().enumerate() {
                         if ui
                             .selectable_label(self.wallpaper_choice == index, *name)
@@ -380,26 +382,28 @@ impl Shell {
                         ui.colored_label(Color32::LIGHT_RED, error);
                     }
                 });
-                ui.heading("Liquid Glass");
+                design::section(ui, "Glass & motion", |ui| {
                 ui.add_enabled(
                     self.glass_available,
                     egui::Checkbox::new(&mut self.glass_enabled, "Enable GPU glass"),
                 );
                 ui.add(egui::Slider::new(&mut self.glass_quality, 0.0..=1.0).text("Blur quality"));
                 ui.checkbox(&mut self.reduced_motion, "Reduce motion");
-                ui.label("Optical material test (wallpaper only)");
-                if self.glass_enabled && self.glass_available {
-                    glass::preview(ui, self.dark, self.glass_quality, self.reduced_motion);
-                }
-                ui.separator();
-                ui.heading("Storage & system");
+                ui.collapsing("Advanced material preview", |ui| {
+                    if self.glass_enabled && self.glass_available {
+                        glass::preview(ui, self.dark, self.glass_quality, self.reduced_motion);
+                    }
+                });
+                });
+                design::section(ui, "Storage & system", |ui| {
                 if icons::row(ui, Icon::Disks, "Storage").clicked() {
                     self.launch(Panel::Disks);
                 }
                 if icons::row(ui, Icon::About, "System information").clicked() {
                     self.launch(Panel::About);
                 }
-                ui.collapsing("System icon library", |ui| {
+                });
+                ui.collapsing("Developer · system icon library", |ui| {
                     ui.horizontal_wrapped(|ui| {
                         for icon in Icon::ALL {
                             ui.vertical(|ui| {
@@ -417,8 +421,13 @@ impl Shell {
             }
             Panel::About => {
                 let target = aera_core::Target::current();
-                ui.heading("AERA");
-                ui.label("One OS. Any machine.");
+                ui.vertical_centered(|ui| {
+                    ui.add_space(12.0);
+                    ui.label(egui::RichText::new("AERA").size(32.0).strong());
+                    ui.label("One OS. Any machine.");
+                    ui.add_space(12.0);
+                });
+                ui.separator();
                 ui.label(format!("{} / {}", target.os, target.arch));
                 ui.label(if guest_session() {
                     "Standalone guest · wgpu requested"
@@ -540,11 +549,11 @@ impl eframe::App for Shell {
             .frame(
                 egui::Frame::new()
                     .fill(chrome)
-                    .inner_margin(egui::Margin::symmetric(12, 3)),
+                    .inner_margin(egui::Margin::symmetric(12, 1)),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.menu_button("A E R A", |ui| {
+                    ui.menu_button("AERA", |ui| {
                         for panel in Panel::ALL {
                             if icons::row(ui, Icon::app(panel), panel.title()).clicked() {
                                 self.launch(panel);
@@ -552,7 +561,7 @@ impl eframe::App for Shell {
                             }
                         }
                     });
-                    ui.menu_button("Applications", |ui| {
+                    ui.menu_button("Apps", |ui| {
                         for panel in Panel::ALL {
                             if ui.button(panel.title()).clicked() {
                                 self.launch(panel);
@@ -560,7 +569,7 @@ impl eframe::App for Shell {
                             }
                         }
                     });
-                    if icons::row(ui, Icon::Search, "Search").clicked() {
+                    if ui.button("Search").clicked() {
                         self.launcher_open = !self.launcher_open;
                     }
                     ui.separator();
@@ -594,7 +603,7 @@ impl eframe::App for Shell {
                     });
                 });
             });
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().frame(egui::Frame::new().fill(ctx.style().visuals.panel_fill)).show(ctx, |ui| {
             if let Some(texture) = &self.wallpaper_texture {
                 wallpaper::paint(ui, texture, self.wallpaper_cover);
             } else {
@@ -607,7 +616,8 @@ impl eframe::App for Shell {
             .show(ctx, |ui| {
                 egui::Frame::new()
                     .fill(chrome)
-                    .corner_radius(egui::CornerRadius::same(18))
+                    .corner_radius(egui::CornerRadius::same(16))
+                    .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 1, color: Color32::from_black_alpha(45) })
                     .stroke(egui::Stroke::new(1.0_f32, Color32::from_white_alpha(70)))
                     .inner_margin(egui::Margin::symmetric(10, 4))
                     .show(ui, |ui| {
