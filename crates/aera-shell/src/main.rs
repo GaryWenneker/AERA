@@ -40,6 +40,8 @@ struct Shell {
     wallpaper_cover: bool,
     wallpaper_error: Option<String>,
     directory: Option<PathBuf>,
+    back: Vec<PathBuf>,
+    forward: Vec<PathBuf>,
     entries: Vec<files::Entry>,
     volumes: Vec<disks::Volume>,
     selected: Option<PathBuf>,
@@ -76,7 +78,9 @@ impl Default for Shell {
             wallpaper_path: String::new(),
             wallpaper_cover: true,
             wallpaper_error: None,
-            directory: std::env::current_dir().ok(),
+            directory: home().or_else(|| std::env::current_dir().ok()),
+            back: Vec::new(),
+            forward: Vec::new(),
             entries: Vec::new(),
             volumes: Vec::new(),
             selected: None,
@@ -118,15 +122,50 @@ impl Shell {
         }
     }
 
-    fn navigate(&mut self, path: PathBuf) {
+    fn load_directory(&mut self, path: PathBuf) -> bool {
         match files::list(&path) {
             Ok(entries) => {
                 self.directory = Some(path);
                 self.entries = entries;
                 self.selected = None;
                 self.file_error = None;
+                true
             }
-            Err(error) => self.file_error = Some(error.to_string()),
+            Err(error) => {
+                self.file_error = Some(error.to_string());
+                false
+            }
+        }
+    }
+
+    fn navigate(&mut self, path: PathBuf) {
+        let previous = self.directory.clone();
+        if previous.as_ref() != Some(&path) && self.load_directory(path) {
+            if let Some(previous) = previous {
+                self.back.push(previous);
+                if self.back.len() > 100 {
+                    self.back.remove(0);
+                }
+            }
+            self.forward.clear();
+        }
+    }
+
+    fn navigate_history(&mut self, forward: bool) {
+        let next = if forward { self.forward.last() } else { self.back.last() }.cloned();
+        let previous = self.directory.clone();
+        if let Some(next) = next {
+            if self.load_directory(next) {
+                let (source, dest) = if forward {
+                    (&mut self.forward, &mut self.back)
+                } else {
+                    (&mut self.back, &mut self.forward)
+                };
+                source.pop();
+                if let Some(previous) = previous {
+                    dest.push(previous);
+                }
+            }
         }
     }
 
@@ -190,12 +229,18 @@ impl Shell {
 
     fn files_content(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
+            if ui.add_enabled(!self.back.is_empty(), egui::Button::new("←")).on_hover_text("Back").clicked() {
+                self.navigate_history(false);
+            }
+            if ui.add_enabled(!self.forward.is_empty(), egui::Button::new("→")).on_hover_text("Forward").clicked() {
+                self.navigate_history(true);
+            }
             if ui.button("Home").clicked() {
                 if let Some(path) = home() {
                     self.navigate(path);
                 }
             }
-            if ui.button("Parent").clicked() {
+            if ui.button("↑").on_hover_text("Parent folder").clicked() {
                 if let Some(path) = self.directory.as_deref().and_then(std::path::Path::parent) {
                     self.navigate(path.to_path_buf());
                 }
@@ -217,8 +262,7 @@ impl Shell {
         }
         ui.separator();
         ui.horizontal(|ui| {
-            ui.label("Filter");
-            ui.text_edit_singleline(&mut self.file_filter);
+            ui.add(egui::TextEdit::singleline(&mut self.file_filter).hint_text("Search this folder").desired_width(f32::INFINITY));
         });
         let mut next = None;
         let filter = self.file_filter.to_lowercase();
@@ -243,18 +287,7 @@ impl Shell {
                                 rect.center_top() + egui::vec2(0.0, 28.0),
                                 egui::vec2(43.0, 43.0),
                             );
-                            if entry.kind == "Folder" {
-                                let blue = Color32::from_rgb(81, 146, 224);
-                                ui.painter().rect_filled(icon.shrink(3.0), 7, blue);
-                                ui.painter().rect_filled(
-                                    egui::Rect::from_min_size(icon.min + egui::vec2(3.0, -1.0), egui::vec2(20.0, 10.0)),
-                                    4,
-                                    blue,
-                                );
-                            } else {
-                                ui.painter().rect_filled(icon.shrink(5.0), 4, Color32::from_rgb(220, 226, 239));
-                                ui.painter().text(icon.center(), egui::Align2::CENTER_CENTER, "FILE", egui::FontId::proportional(9.0), Color32::from_rgb(65, 78, 105));
-                            }
+                            design::file_icon(ui, icon, entry.kind, &entry.path);
                             let short: String = name.chars().take(14).collect();
                             ui.painter().text(rect.center_bottom() - egui::vec2(0.0, 12.0), egui::Align2::CENTER_CENTER, short, egui::FontId::proportional(12.0), ui.visuals().text_color());
                             if response.clicked() {
@@ -267,29 +300,46 @@ impl Shell {
                         }
                     });
                 } else {
-                    egui::Grid::new("file-table").striped(true).min_col_width(72.0).show(ui, |ui| {
-                        ui.strong("Name");
-                        ui.strong("Kind");
-                        ui.strong("Size");
-                        ui.end_row();
-                        for entry in &self.entries {
-                            if !entry.name.to_string_lossy().to_lowercase().contains(&filter) {
-                                continue;
-                            }
-                            let response = ui.selectable_label(self.selected.as_ref() == Some(&entry.path), entry.name.to_string_lossy());
-                            if response.clicked() {
-                                self.selected = Some(entry.path.clone());
-                            }
-                            if response.double_clicked() && entry.kind == "Folder" {
-                                next = Some(entry.path.clone());
-                            }
-                            ui.label(entry.kind);
-                            ui.label(entry.size.map_or_else(|| "—".into(), |n| {
-                                if n < 1024 { format!("{n} B") } else if n < 1048576 { format!("{:.1} KB", n as f64 / 1024.0) } else { format!("{:.1} MB", n as f64 / 1048576.0) }
-                            }));
-                            ui.end_row();
-                        }
+                    let width = ui.available_width().max(100.0);
+                    let name_width = width * 0.60;
+                    ui.horizontal(|ui| {
+                        ui.add_sized([name_width, 22.0], egui::Label::new("Name"));
+                        ui.label("Kind");
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label("Size");
+                        });
                     });
+                    ui.separator();
+                    for entry in &self.entries {
+                        let name = entry.name.to_string_lossy();
+                        if !name.to_lowercase().contains(&filter) {
+                            continue;
+                        }
+                        let (rect, response) = ui.allocate_exact_size(egui::vec2(width, 30.0), egui::Sense::click());
+                        let selected = self.selected.as_ref() == Some(&entry.path);
+                        if selected || response.hovered() {
+                            ui.painter().rect_filled(rect, 6, if selected { ui.visuals().selection.bg_fill } else { ui.visuals().faint_bg_color });
+                        }
+                        let icon = egui::Rect::from_center_size(
+                            rect.left_center() + egui::vec2(16.0, 0.0),
+                            egui::vec2(21.0, 21.0),
+                        );
+                        design::file_icon(ui, icon, entry.kind, &entry.path);
+                        let p = ui.painter();
+                        let ink = ui.visuals().text_color();
+                        let font = egui::FontId::proportional(13.0);
+                        let clip = egui::Rect::from_min_max(rect.min + egui::vec2(34.0, 0.0), egui::pos2(rect.left() + name_width, rect.bottom()));
+                        p.with_clip_rect(clip).text(rect.left_center() + egui::vec2(34.0, 0.0), egui::Align2::LEFT_CENTER, name.as_ref(), font.clone(), ink);
+                        p.text(rect.left_center() + egui::vec2(name_width + 5.0, 0.0), egui::Align2::LEFT_CENTER, entry.kind, font.clone(), ink);
+                        p.text(rect.right_center() - egui::vec2(6.0, 0.0), egui::Align2::RIGHT_CENTER, files::display_size(entry.size), font, ink);
+                        if response.clicked() {
+                            self.selected = Some(entry.path.clone());
+                        }
+                        if response.double_clicked() && entry.kind == "Folder" {
+                            next = Some(entry.path.clone());
+                        }
+                        response.on_hover_text(name.as_ref());
+                    }
                 }
             });
         if let Some(path) = next {
@@ -301,7 +351,8 @@ impl Shell {
             ui.label(format!("Selected: {}", path.display()));
         }
         ui.separator();
-        ui.label("Create or copy in the displayed directory (no overwrite)");
+        ui.collapsing("File actions", |ui| {
+        ui.small("Create or copy in this folder without overwrite");
         ui.horizontal(|ui| {
             ui.label("New name");
             ui.text_edit_singleline(&mut self.file_name);
@@ -330,6 +381,7 @@ impl Shell {
             {
                 self.file_action(2);
             }
+        });
         });
         if let Some(notice) = &self.file_notice {
             ui.label(notice);
