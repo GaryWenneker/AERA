@@ -56,3 +56,9 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 - [ ] AERA-035 create folder/empty file, validation and collision protection.
 - [ ] AERA-036 explicit regular-file copy, no overwrite; test error paths.
 - [ ] Add list filter and navigation history; next: asynchronous I/O, safe rename/move and recoverable trash after independent review.
+
+## P2h — desktop window lifecycle and workspaces
+- [ ] Window state model and tests for minimize/restore, maximize exclusivity, workspace isolation and bounds.
+- [ ] Global menu bar and dock, maximize presentation, workspace switcher and keyboard navigation.
+- [ ] Separate app content per workspace, move windows between workspaces, overview and persistence.
+- [ ] Validate real interaction, accessibility, geometry restore and native compositor integration.
