@@ -116,11 +116,19 @@ pub fn chrome(dark: bool, translucent: bool) -> Color32 {
     }
 }
 
-pub fn dock_icon(ui: &mut egui::Ui, panel: Panel, running: bool, size: f32) -> egui::Response {
+pub fn dock_icon(ui: &mut egui::Ui, panel: Panel, running: bool, size: f32, reduced_motion: bool) -> egui::Response {
     let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(size + 8.0, size + 12.0), egui::Sense::click());
-    let tile =
-        egui::Rect::from_center_size(rect.center() - egui::vec2(0.0, 4.0), egui::vec2(size, size));
+        ui.allocate_exact_size(egui::vec2(size + 16.0, size + 22.0), egui::Sense::click());
+    let hover = if reduced_motion {
+        0.0
+    } else {
+        ui.ctx().animate_bool_with_time(response.id, response.hovered(), 0.16)
+    };
+    let visual_size = size + hover * 12.0;
+    let tile = egui::Rect::from_center_size(
+        rect.center() - egui::vec2(0.0, 4.0 + hover * 4.0),
+        egui::vec2(visual_size, visual_size),
+    );
     icons::paint(ui, tile, Icon::app(panel), true);
     if response.hovered() {
         ui.painter()
