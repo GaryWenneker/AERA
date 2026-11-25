@@ -12,6 +12,7 @@ struct Resources {
     groups: Vec<wgpu::BindGroup>,
     pipelines: Vec<wgpu::RenderPipeline>,
     uniform: wgpu::Buffer,
+    scene_key: Option<[u32; 3]>,
 }
 
 fn texture(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture {
@@ -165,6 +166,7 @@ pub fn install(state: &egui_wgpu::RenderState) {
         groups,
         pipelines,
         uniform,
+        scene_key: None,
     });
 }
 
@@ -181,11 +183,21 @@ impl CallbackTrait for Material {
         encoder: &mut wgpu::CommandEncoder,
         resources: &mut CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
-        let Some(r) = resources.get::<Resources>() else {
+        let Some(r) = resources.get_mut::<Resources>() else {
             return Vec::new();
         };
         let bytes: Vec<u8> = self.values.iter().flat_map(|v| v.to_le_bytes()).collect();
         queue.write_buffer(&r.uniform, 0, &bytes);
+        // Pointer and morph changes affect only the final optical pass.
+        let scene_key = [
+            self.values[3].to_bits(),
+            self.values[4].to_bits(),
+            self.values[5].to_bits(),
+        ];
+        if r.scene_key == Some(scene_key) {
+            return Vec::new();
+        }
+        r.scene_key = Some(scene_key);
         for i in 0..3 {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Glass intermediate pass"),
