@@ -24,3 +24,6 @@ See [visual design](DESIGN.md) and [guest boot instructions](BOOT.md). The exper
 
 ## Desktop system applications
 See [DESKTOP.md](DESKTOP.md). Files supports real directory navigation, selection, file types and sizes; Disks shows actual mounted volumes and capacity and opens them in Files. Disks is read-only; Files also supports explicit creation and same-directory regular-file copies without overwrite. Settings links to storage and system information; the desktop app grid and dock launch these panels. No partitioning, formatting, mount changes or destructive file mutations are implemented. Launch with `cargo run -p aera-shell --release`.
+
+## Window management and virtual desktops
+The AERA menu bar is persistent in normal mode. Window controls close, minimize, maximize and restore internal applications; minimized apps reopen from the dock. Maximized mode hides the menu and dock; Escape restores. Use + in the menu bar to create up to eight desktops, numbered buttons to switch, or Ctrl+Alt+Left/Right. Window visibility is independent per desktop; application data remains shared in this preview.
