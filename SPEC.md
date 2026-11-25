@@ -25,3 +25,17 @@ Given a supported hosted build, when doctor runs, then it reports target eligibi
 
 ## Setup and decisions
 Initialize empty main with documentation, then code checkpoints. Standard Rust library only for P0; Cargo, rustfmt and Clippy; no third-party dependencies. No local user working tree changes. Subsequent dependencies need ADR justification and license/security review. Public repository license choice remains open; do not assume a license. No separate spec approval obtained (autonomous run requested).
+
+## AERA Shell — detailed GUI specification (P2)
+- [ ] AERA-015 Hosted native desktop prototype: branded workspace, top status bar, dock, launchable Files, Settings and About panels, no browser runtime. Window opens at usable size and supports resize.
+- [ ] AERA-016 Theme controls: light/dark palettes, consistent typography and spacing, UI zoom; persist preferences in later P1 storage integration.
+- [ ] AERA-017 Search launcher: case-insensitive application filtering, keyboard focus, launch via Enter or click, empty result state.
+- [ ] AERA-018 File manager: real filesystem navigation, safe read-only listing first, permission errors, later copy/move/delete with explicit confirmation and recovery. No fabricated files.
+- [ ] AERA-019 Window lifecycle: open, close, focus, move, resize, minimize, maximize, snapping and tiling; hosted internal windows first, native compositor later.
+- [ ] AERA-020 Multiple virtual workspaces, multi-monitor placement, DPI/Retina/4K and 120 Hz-capable presentation.
+- [ ] AERA-021 Keyboard accessibility, screen reader semantics, visible focus, contrast and reduced motion. Test with actual assistive technologies.
+- [ ] AERA-022 GPU backend qualification: Metal/macOS, DX12/Windows, Vulkan/Linux; record actual backend, frame pacing and fallback behavior. No continuous rendering while idle.
+- [ ] AERA-023 Native compositor, input routing and external app surfaces for standalone Linux-backed guest/native mode; do not claim hosted internal windows are OS-level window management.
+- [ ] AERA-024 GUI packaging, native smoke tests on x86-64/ARM64, measured startup/RSS/frame latency; no Electron or Chromium in shell.
+
+P2a acceptance: native window launches, dock opens independent internal panels, close works, search filters app names and opens selected app, theme/zoom controls update the UI, About displays actual compiled target. Files initially exposes the user-selected host working directory in a bounded read-only listing; errors are visible. No host privilege escalation or filesystem writes. Unit tests cover search and shell state; manual GPU smoke tests remain mandatory. P2a does not establish compositor, full accessibility, 120 Hz or native hardware support.
