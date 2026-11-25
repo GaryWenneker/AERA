@@ -11,7 +11,7 @@ pub struct Terminal {
     input: String,
     output: String,
     cwd: PathBuf,
-    result: Option<mpsc::Receiver<String>>,
+    result: Option<mpsc::Receiver<Event>>,
     cancel: Arc<AtomicBool>,
     history: Vec<String>,
     cursor: usize,
@@ -31,15 +31,44 @@ impl Default for Terminal {
     }
 }
 
-fn drain<R: Read>(mut stream: R) -> Vec<u8> {
-    let mut data = Vec::new();
+enum Event {
+    Output(String),
+    Done(String),
+}
+
+fn stream<R: Read>(
+    mut reader: R,
+    tx: mpsc::SyncSender<Event>,
+    ctx: egui::Context,
+) {
     let mut buf = [0u8; 4096];
-    while let Ok(n) = stream.read(&mut buf) {
-        if n == 0 { break; }
-        let keep = n.min(LIMIT.saturating_sub(data.len()));
-        data.extend_from_slice(&buf[..keep]);
+    let mut pending = Vec::new();
+    loop {
+        let n = match reader.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(_) => break,
+        };
+        pending.extend_from_slice(&buf[..n]);
+        let end = match std::str::from_utf8(&pending) {
+            Ok(_) => pending.len(),
+            Err(e) if e.error_len().is_none() => e.valid_up_to(),
+            Err(_) => pending.len(),
+        };
+        if end > 0 {
+            let text = String::from_utf8_lossy(&pending[..end]).into_owned();
+            pending.drain(..end);
+            if tx.send(Event::Output(text)).is_err() {
+                return;
+            }
+            ctx.request_repaint();
+        }
     }
-    data
+    if !pending.is_empty() {
+        let _ = tx.send(Event::Output(String::from_utf8_lossy(&pending).into_owned()));
+        ctx.request_repaint();
+    }
 }
 
 impl Terminal {
@@ -79,7 +108,7 @@ impl Terminal {
         let cwd = self.cwd.clone();
         let cancel = Arc::new(AtomicBool::new(false));
         self.cancel = cancel.clone();
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::sync_channel(64);
         self.result = Some(rx);
         let ctx = ctx.clone();
         std::thread::spawn(move || {
@@ -98,8 +127,12 @@ impl Terminal {
                 Ok(mut child) => {
                     let stdout = child.stdout.take().expect("piped stdout");
                     let stderr = child.stderr.take().expect("piped stderr");
-                    let out = std::thread::spawn(move || drain(stdout));
-                    let err = std::thread::spawn(move || drain(stderr));
+                    let out_tx = tx.clone();
+                    let err_tx = tx.clone();
+                    let out_ctx = ctx.clone();
+                    let err_ctx = ctx.clone();
+                    let out = std::thread::spawn(move || stream(stdout, out_tx, out_ctx));
+                    let err = std::thread::spawn(move || stream(stderr, err_tx, err_ctx));
                     let status = loop {
                         if cancel.load(Ordering::Relaxed) {
                             let _ = child.kill();
@@ -116,28 +149,43 @@ impl Terminal {
                     while !(out.is_finished() && err.is_finished()) && std::time::Instant::now() < deadline {
                         std::thread::sleep(Duration::from_millis(20));
                     }
-                    let a = if out.is_finished() { out.join().unwrap_or_default() } else { Vec::new() };
-                    let b = if err.is_finished() { err.join().unwrap_or_default() } else { Vec::new() };
-                    format!("{}{}\n[{:?}]\n", String::from_utf8_lossy(&a), String::from_utf8_lossy(&b), status)
+                    if out.is_finished() { let _ = out.join(); }
+                    if err.is_finished() { let _ = err.join(); }
+                    format!("\n[{status:?}]\n")
                 }
                 Err(error) => format!("Launch failed: {error}\n"),
             };
-            let _ = tx.send(message);
+            let _ = tx.send(Event::Done(message));
             ctx.request_repaint();
         });
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, guest: bool) {
-        if let Some(rx) = &self.result {
-            match rx.try_recv() {
-                Ok(message) => { self.result = None; self.append(&message); }
+    pub fn poll(&mut self, ctx: &egui::Context) {
+        for _ in 0..64 {
+            let event = match &self.result {
+                Some(rx) => rx.try_recv(),
+                None => break,
+            };
+            match event {
+                Ok(Event::Output(text)) => self.append(&text),
+                Ok(Event::Done(message)) => {
+                    self.result = None;
+                    self.append(&message);
+                }
                 Err(mpsc::TryRecvError::Disconnected) => {
                     self.result = None;
                     self.append("Command worker stopped\n");
                 }
-                Err(mpsc::TryRecvError::Empty) => {}
+                Err(mpsc::TryRecvError::Empty) => break,
             }
         }
+        if self.result.is_some() {
+            ctx.request_repaint_after(Duration::from_millis(40));
+        }
+    }
+
+    pub fn show(&mut self, ui: &mut egui::Ui, guest: bool) {
+        self.poll(ui.ctx());
         ui.small(if guest { "Guest shell" } else { "Host shell · commands run on this computer" });
         ui.monospace(self.cwd.display().to_string());
         egui::ScrollArea::vertical().stick_to_bottom(true)
@@ -163,5 +211,11 @@ impl Terminal {
                 self.cancel.store(true, Ordering::Relaxed);
             }
         });
+    }
+}
+
+impl Drop for Terminal {
+    fn drop(&mut self) {
+        self.cancel.store(true, Ordering::Relaxed);
     }
 }
