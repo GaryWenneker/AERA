@@ -22,3 +22,6 @@ AERA-041–047 partial: WGSL scene/down/up/material entry points, wgpu callback 
 
 ## Glass cache checkpoint
 CI run 45595836847 failed rustfmt on all three platforms. Applied the observed formatter diffs from job 139141521076 to files.rs, glass.rs and main.rs. Added intermediate texture cache keyed by theme/aspect/quality, nine-point luminance estimate, contrast-oriented interior adjustment and light-mode capture. New validation pending; this is still procedural preview, not compositor backdrop capture. Regional estimate is not a full reduction; actual text contrast and GPU timing unmeasured. Screenshot run 45595871935 was compiling when inspected. No screenshot inspected yet. All acceptance boxes remain open.
+
+## Terminal streaming increment
+Live stdout/stderr via bounded synchronous channel, UTF-8 boundary handling and polling independent of window visibility committed. Latest CI 45598030421 queued when inspected; previous runs cancelled. No new test execution or screenshot validation observed. Direct child cancellation only; descendants may retain pipes, output may be truncated at completion, shell buffering may delay output. No PTY. Window transparency and two-axis resize still require interactive validation.
