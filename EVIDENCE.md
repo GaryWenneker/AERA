@@ -13,3 +13,6 @@ AERA-028–033 partial code committed. Added std::fs directory listing/navigatio
 
 ## File actions increment
 AERA-035/036 code and GUI controls committed. Tests authored: invalid_names_rejected and creation_and_copy_never_overwrite. CI was queued when inspected; new tests, format, lint, runtime and guest boot not confirmed. Copy is synchronous, same-directory, regular-file only; incomplete destination can remain on error and requires explicit recovery. Concurrent path replacement is not hardened; no delete, move, rename or disk mutations. Separate spec approval and independent review pending.
+
+## Window management increment
+AERA-037–040 initial code committed: session workspace state, exclusive maximization, minimize/restore, global menu and keyboard switching. Tests authored: maximize_is_exclusive_and_minimize_can_restore, workspaces_preserve_independent_windows_and_limits. GUI interaction, floating geometry restoration, build/lint/format, accessibility and standalone guest behavior are not yet verified. Workspace content is shared and persistence, workspace removal and native external window management remain open. No separate spec approval obtained.
