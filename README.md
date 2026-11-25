@@ -18,3 +18,6 @@ Install stable Rust with rustfmt and Clippy. Run `cargo test --workspace`, `carg
 
 ## AERA Shell (P2a prototype)
 Launch with `cargo run -p aera-shell --release`. A native resizable desktop window with dock, search, independent internal panels, theme/zoom controls and read-only working-directory listing. Uses eframe/egui with wgpu, not a browser. Linux build dependencies: libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libwayland-dev libssl-dev. A working display and GPU adapter are required; actual backend support and GUI smoke tests remain unverified. This is not a compositor or bootable OS.
+
+## Standalone OS engineering preview
+See [visual design](DESIGN.md) and [guest boot instructions](BOOT.md). The experimental guest CI builds an x86-64 Debian-backed qcow2 image, direct-boot kernel/initramfs and runs a QEMU readiness test. Artifacts are published only after the smoke test passes. Native Apple Silicon, UEFI, custom compositor and Rust kernel are not yet supported. No successful guest boot or visual verification claimed yet.
