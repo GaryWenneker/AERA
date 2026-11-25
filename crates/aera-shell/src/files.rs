@@ -35,7 +35,9 @@ pub fn list(path: &Path) -> std::io::Result<Vec<Entry>> {
 }
 
 pub fn display_size(size: Option<u64>) -> String {
-    let Some(bytes) = size else { return "—".into(); };
+    let Some(bytes) = size else {
+        return "—".into();
+    };
     if bytes < 1024 {
         return format!("{bytes} B");
     }
