@@ -21,3 +21,6 @@ References: https://developer.apple.com/documentation/technologyoverviews/adopti
 
 ## Usable material and terminal
 User screenshots show overlapping readable text through windows and settings overflow. Use opaque terminal and settings content, translucency reserved for chrome until real backdrop blur. Settings has categorical sidebar, one page at a time. Terminal reference: Ghostty native tabs/splits and Apple Terminal shell interaction; use a persistent PTY and VT grid rather than Run form. References https://ghostty.org/docs/features ; https://support.apple.com/guide/terminal/welcome/mac ; https://developer.apple.com/design/human-interface-guidelines/materials .
+
+## Desktop redesign contract
+Dock: floating 56–68 logical px capsule, 32–40px icons with fixed hit targets, cursor magnification and reduced-motion fallback, running dots, app restore and focus. Files: 180px navigation rail, compact toolbar, icon/list modes, readable sizes, modification date, full-width selection, one scrolling content region and separate file actions. Wallpaper: visual thumbnail gallery, photo import, cover/fit, original photographic assets with provenance; no runtime network requirement. Actual screenshot review required.
