@@ -41,3 +41,13 @@ Setup: add crates/aera-shell (native binary + testable state); use eframe/egui w
 - [ ] Boot QEMU in CI and validate serial readiness marker from actual shell window.
 - [ ] Capture GUI screenshot and verify input/shutdown manually; then add ARM64 guest and UEFI boot.
 Setup: disposable Linux CI builder; debootstrap, guestfish, qemu, Xorg/Openbox and Mesa software Vulkan. Existing Rust GUI dependency retained; no raw disk installation. Separate human approval pending.
+
+## P2g — usable graphical system applications (priority before desktop polish)
+- [ ] Desktop app grid, dock state and first-party registry (AERA-028/032).
+- [ ] Real directory navigation, metadata, home/parent and selection (AERA-029).
+- [ ] Read-only cross-platform mounted filesystem inventory and capacity (AERA-030).
+- [ ] Grouped settings and storage entry point (AERA-031).
+- [ ] Async service adapters and persistent preferences; safe file mutations, trash and recovery (AERA-033).
+- [ ] Physical disk inventory, authorization service and mount lifecycle; defer destructive disk operations pending independent review.
+- [ ] Monitor, terminal, installer, session/power actions, native compositor and standalone validation (AERA-034).
+See DESKTOP.md for acceptance and dependency justification. No user disk modifications in this increment.
