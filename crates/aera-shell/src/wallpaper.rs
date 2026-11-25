@@ -31,6 +31,20 @@ pub fn builtin(index: usize) -> egui::ColorImage {
     artwork(index.saturating_sub(PHOTOS.len()).min(2))
 }
 
+pub fn thumbnail(index: usize) -> egui::ColorImage {
+    let full = builtin(index);
+    let [w, h] = full.size;
+    let width = 224;
+    let height = (h * width / w).max(1);
+    let mut pixels = Vec::with_capacity(width * height);
+    for y in 0..height {
+        for x in 0..width {
+            pixels.push(full.pixels[(y * h / height) * w + x * w / width]);
+        }
+    }
+    egui::ColorImage { size: [width, height], pixels }
+}
+
 fn artwork(index: usize) -> egui::ColorImage {
     let palettes = [
         [
