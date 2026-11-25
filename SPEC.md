@@ -39,3 +39,8 @@ Initialize empty main with documentation, then code checkpoints. Standard Rust l
 - [ ] AERA-024 GUI packaging, native smoke tests on x86-64/ARM64, measured startup/RSS/frame latency; no Electron or Chromium in shell.
 
 P2a acceptance: native window launches, dock opens independent internal panels, close works, search filters app names and opens selected app, theme/zoom controls update the UI, About displays actual compiled target. Files initially exposes the user-selected host working directory in a bounded read-only listing; errors are visible. No host privilege escalation or filesystem writes. Unit tests cover search and shell state; manual GPU smoke tests remain mandatory. P2a does not establish compositor, full accessibility, 120 Hz or native hardware support.
+
+## Standalone visual preview
+- [ ] AERA-025 Consistent AERA visual tokens and procedural wallpaper per DESIGN.md, dark/light contrast, no perpetual animation.
+- [ ] AERA-026 Build a disposable x86-64 Linux-backed qcow2 guest and export kernel/initramfs; boot without host OS application dependencies inside guest; start AERA graphical session as non-root.
+- [ ] AERA-027 Serial boot smoke validates X server and shell window; manual screenshot and input verification required. No host disk writes or network by default. ARM64 and UEFI remain separate gates.
