@@ -27,3 +27,6 @@ See [DESKTOP.md](DESKTOP.md). Files supports real directory navigation, selectio
 
 ## Window management and virtual desktops
 The AERA menu bar is persistent in normal mode. Window controls close, minimize, maximize and restore internal applications; minimized apps reopen from the dock. Maximized mode hides the menu and dock; Escape restores. Use + in the menu bar to create up to eight desktops, numbered buttons to switch, or Ctrl+Alt+Left/Right. Window visibility is independent per desktop; application data remains shared in this preview.
+
+## AERA Glass
+The native desktop includes a GPU material preview with procedural scene, Kawase-style down/up blur, optical WGSL shader and cursor highlight. Settings exposes quality, reduced motion and opaque fallback; set `AERA_GLASS_OFF=1` before launch to bypass the preview. This does not yet capture overlapping application windows or apply Glass throughout the shell. [Glass specification](GLASS.md). The visual evidence workflow captures the actual executable under Linux Xvfb and publishes PNGs and provenance only after successful capture.
