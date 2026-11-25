@@ -2,6 +2,8 @@
 
 use aera_shell::{search, Desktop, Panel};
 use eframe::egui::{self, Color32, RichText};
+mod design;
+
 use std::path::{Path, PathBuf};
 
 struct Shell {
@@ -86,11 +88,7 @@ impl Shell {
                 }
                 Panel::Settings => {
                     if ui.checkbox(&mut self.dark, "Dark appearance").changed() {
-                        ctx.set_visuals(if self.dark {
-                            egui::Visuals::dark()
-                        } else {
-                            egui::Visuals::light()
-                        });
+                        design::apply(ctx, self.dark);
                     }
                     if ui
                         .add(egui::Slider::new(&mut self.zoom, 0.8..=1.6).text("UI zoom"))
@@ -105,7 +103,11 @@ impl Shell {
                     ui.heading("AERA");
                     ui.label("One OS. Any machine.");
                     ui.label(format!("{} / {}", target.os, target.arch));
-                    ui.label("Hosted prototype · wgpu requested");
+                    ui.label(if guest_session() {
+                        "Standalone guest · wgpu requested"
+                    } else {
+                        "Hosted prototype · wgpu requested"
+                    });
                     ui.label("Hardware and compositor support not qualified.");
                 }
             });
@@ -121,7 +123,11 @@ impl eframe::App for Shell {
                 ui.separator();
                 ui.label("Workspace 01");
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label("Hosted session");
+                    ui.label(if guest_session() {
+                        "AERA OS · Preview"
+                    } else {
+                        "Hosted session"
+                    });
                 });
             });
         });
@@ -135,9 +141,10 @@ impl eframe::App for Shell {
             });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(32.0);
+            design::wallpaper(ui, self.dark);
+            ui.add_space(64.0);
             ui.vertical_centered(|ui| {
-                ui.label(RichText::new("A E R A").size(40.0).strong());
+                ui.label(RichText::new("A E R A").size(48.0).strong());
                 ui.label("One OS. Any machine.");
                 ui.add_space(20.0);
                 let response = ui.add(
@@ -169,19 +176,24 @@ impl eframe::App for Shell {
     }
 }
 
+fn guest_session() -> bool {
+    cfg!(target_os = "linux") && std::env::var_os("AERA_GUEST_SESSION").is_some()
+}
+
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1100.0, 720.0])
-            .with_min_inner_size([640.0, 480.0]),
+            .with_min_inner_size([640.0, 480.0])
+            .with_fullscreen(guest_session()),
         ..Default::default()
     };
     eframe::run_native(
         "AERA Shell",
         options,
         Box::new(|cc| {
-            cc.egui_ctx.set_visuals(egui::Visuals::dark());
+            design::apply(&cc.egui_ctx, true);
             Ok(Box::new(Shell::default()))
         }),
     )
