@@ -10,3 +10,6 @@ Observed previous CI run 45592428715 completed successfully on Windows, macOS an
 
 ## Desktop system apps increment
 AERA-028–033 partial code committed. Added std::fs directory listing/navigation, mount capacity via sysinfo, desktop application grid, dock open-state and settings links. Tests authored: missing_path_reports_error, real_file_metadata_and_directory_order, capacity_is_bounded. Not executed or visually verified in this session. New dependency audit, lockfile, cross-host CI, rustfmt, GUI smoke, coverage, mutation and independent review remain pending. Files listing is synchronous, bounded to 1000 entries and read-only; Disks lists mounts, not physical partitions. No destructive actions implemented. Latest prior guest CI was queued; standalone boot not established. Separate spec approval not obtained (autonomous run).
+
+## File actions increment
+AERA-035/036 code and GUI controls committed. Tests authored: invalid_names_rejected and creation_and_copy_never_overwrite. CI was queued when inspected; new tests, format, lint, runtime and guest boot not confirmed. Copy is synchronous, same-directory, regular-file only; incomplete destination can remain on error and requires explicit recovery. Concurrent path replacement is not hardened; no delete, move, rename or disk mutations. Separate spec approval and independent review pending.
