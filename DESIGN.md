@@ -12,3 +12,6 @@ User runtime screenshot confirms the centered shader demo and rectangular launch
 
 ## Fresh visual identity (supersedes teal palette)
 Default light: porcelain, cool blue and lavender wallpaper with warm peach highlights; dark: ink, slate and muted violet. Accent blue, not teal. App icons use a common rounded silhouette with distinct restrained blue, silver, violet and amber accents. Native vector glyphs on a 24-unit grid; 16/20 logical px for menus and settings, 32/40 for dock, adjustable compact dock. Keep strokes proportional and labels readable. Twelve named symbols: Files, Disks, Settings, About, Terminal, Monitor, App Library, Installer, Search, Notifications, Network, Appearance. Only implemented apps launch; reserved symbols do not imply functionality. No generated icon board as runtime asset or screenshot.
+
+## Wallpapers
+Desktop backgrounds are user-selectable independently of appearance. Ship original procedural landscape artwork as the default and alternate abstract and dusk choices. Custom local PNG/JPEG/WebP images supported with centered cover crop or fit. Decode bounded images, upload once per selection, preserve previous wallpaper on failure. No network fetch, no fake screenshot. First increment session-only settings; persistence and per-workspace choices later.
