@@ -66,3 +66,6 @@ AERA-053 requires a desktop-first visual correction per DESIGN.md and GLASS.md, 
 - [ ] AERA-057 Terminal app launches real user-requested commands asynchronously, streams bounded output, supports persistent working directory, history and cancellation. Hosted execution is explicitly labelled host execution; guest uses guest shell. No elevation or automatic execution. Full PTY/ANSI interactive emulation follows.
 
 - [ ] AERA-058 Refined desktop visual hierarchy: flat global menu, edge-to-edge wallpaper, consistent type and spacing, grouped Settings, restrained window/dock material, clear hover/focus. Actual screenshot review required.
+
+- [ ] AERA-059 Interactive PTY terminal with persistent shell, VT grid, ANSI colors, keyboard input and terminal resize; opaque reading surface, host/guest indication. Validate on real macOS/Linux/Windows; full escape protocol, selection and tabs follow.
+- [ ] AERA-060 Settings navigation separates Appearance, Wallpaper, Glass and System; opaque content and restrained translucent chrome prevent overlapping text bleed.
