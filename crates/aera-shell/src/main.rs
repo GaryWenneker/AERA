@@ -8,12 +8,15 @@ mod files;
 mod glass;
 mod icons;
 mod wallpaper;
+mod terminal;
 use icons::Icon;
 
 use std::path::PathBuf;
 
 struct Shell {
     desktop: Desktop,
+    terminal: terminal::Terminal,
+    window_opacity: u8,
     query: String,
     launcher_open: bool,
     dark: bool,
@@ -42,6 +45,8 @@ impl Default for Shell {
     fn default() -> Self {
         Self {
             desktop: Desktop::default(),
+            terminal: terminal::Terminal::default(),
+            window_opacity: 82,
             query: String::new(),
             launcher_open: false,
             dark: false,
@@ -310,6 +315,7 @@ impl Shell {
 
     fn app_content(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, panel: Panel) {
         match panel {
+            Panel::Terminal => self.terminal.show(ui, guest_session()),
             Panel::Files => self.files_view(ui),
             Panel::Disks => self.disks_view(ui),
             Panel::Settings => {
@@ -325,6 +331,7 @@ impl Shell {
                 }
                 ui.separator();
                 ui.checkbox(&mut self.compact_dock, "Compact dock");
+                ui.add(egui::Slider::new(&mut self.window_opacity, 65..=100).suffix("%").text("Window opacity"));
                 ui.collapsing("Wallpaper", |ui| {
                     for (index, name) in wallpaper::NAMES.iter().enumerate() {
                         if ui.selectable_label(self.wallpaper_choice == index, *name).clicked() {
@@ -444,19 +451,29 @@ impl Shell {
         }
         let offset = panel as usize as f32 * 30.0;
         let workspace = self.desktop.active();
+        let alpha = if self.glass_enabled { (u16::from(self.window_opacity) * 255 / 100) as u8 } else { 255 };
+        let fill = if self.dark { Color32::from_rgba_unmultiplied(28, 32, 44, alpha) } else { Color32::from_rgba_unmultiplied(250, 251, 255, alpha) };
+        let frame = egui::Frame::window(&ctx.style()).fill(fill);
         egui::Window::new(panel.title())
             .id(egui::Id::new(("app", workspace, panel as usize)))
             .default_pos([80.0 + offset, 80.0 + offset])
-            .default_size(if matches!(panel, Panel::Files | Panel::Disks) {
+            .default_size(if matches!(panel, Panel::Files | Panel::Disks | Panel::Terminal) {
                 [650.0, 380.0]
             } else {
                 [380.0, 260.0]
             })
-            .resizable(true)
+            .resizable([true, true])
+            .min_size([240.0, 140.0])
+            .frame(frame)
             .title_bar(false)
             .show(ctx, |ui| {
+                ui.set_min_size(ui.available_size());
                 self.window_controls(ui, panel);
-                self.app_content(ctx, ui, panel);
+                if panel == Panel::Terminal {
+                    self.app_content(ctx, ui, panel);
+                } else {
+                    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| self.app_content(ctx, ui, panel));
+                }
             });
     }
 }
