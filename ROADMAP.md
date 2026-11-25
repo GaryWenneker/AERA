@@ -74,3 +74,8 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 - [ ] Verify regional luminance and theme-specific tint in real frames (AERA-048).
 - [ ] Verify intermediate cache invalidation and measure pointer-only render cost (AERA-049).
 - [ ] Validate dark, light and fallback screenshots from matching source commit (AERA-050).
+
+### Desktop visual correction (priority)
+- [ ] Remove desktop shader demo and redundant tiles; implement centered icon dock, top menu and window chrome.
+- [ ] Files location sidebar and actual desktop/Files screenshots.
+- [ ] Replace interim translucent chrome with shared compositor Glass material after backdrop capture is implemented.
