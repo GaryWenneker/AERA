@@ -1,0 +1,12 @@
+[package]
+name = "aera-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aera"
+path = "src/main.rs"
+
+[dependencies]
+aera-core = { path = "../aera-core" }
