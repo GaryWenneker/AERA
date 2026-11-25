@@ -59,3 +59,5 @@ AERA-048–050 extend GLASS.md with regional luminance, intermediate texture cac
 AERA-053 requires a desktop-first visual correction per DESIGN.md and GLASS.md, with real screenshot evidence.
 
 - [ ] AERA-054 Fresh neutral light-default desktop with blue accent and complementary wallpaper, dark alternative; consistent native scalable icon family for apps and settings, compact dock control, no fake app launchers. Validate real captures at both sizes and themes.
+
+- [ ] AERA-055 Wallpaper gallery, full desktop rendering with aspect-preserving cover/fit, custom local image loading with bounded decode and visible errors. Verify actual captures and invalid image handling; persistence and native chooser follow.
