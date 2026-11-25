@@ -95,3 +95,7 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 
 ### AERA-058 visual refinement
 - [ ] Apply shared typography, flat controls, edge-to-edge desktop and refined dock/window material; organize settings; validate actual UI.
+
+### Terminal and Settings redesign
+- [ ] AERA-059 replace default command form with portable-pty 0.9 and vt100 0.15.2, bounded channels, grid and keyboard input; retain command runner as source fallback only. Test shell, colors, resize and exit. Tabs, splits, selection and clipboard integration follow.
+- [ ] AERA-060 category sidebar, consistent settings surfaces, remove transparent text bleed. Visual review on actual app.
