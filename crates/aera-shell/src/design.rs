@@ -1,5 +1,5 @@
-use aera_shell::Panel;
 use crate::icons::{self, Icon};
+use aera_shell::Panel;
 use eframe::egui::{self, Color32, Stroke};
 
 pub fn apply(ctx: &egui::Context, dark: bool) {
@@ -64,7 +64,10 @@ pub fn wallpaper(ui: &egui::Ui, dark: bool) {
                 ((a[i] + (b[i] - a[i]) * wave) * (1.0 - warmth) + peach[i] * warmth) as u8
             };
             mesh.colored_vertex(
-                egui::pos2(rect.left() + u * rect.width(), rect.top() + v * rect.height()),
+                egui::pos2(
+                    rect.left() + u * rect.width(),
+                    rect.top() + v * rect.height(),
+                ),
                 Color32::from_rgb(color(0), color(1), color(2)),
             );
             if x < 20 && y < 20 {
@@ -95,17 +98,14 @@ pub fn chrome(dark: bool, translucent: bool) -> Color32 {
 }
 
 pub fn dock_icon(ui: &mut egui::Ui, panel: Panel, running: bool, size: f32) -> egui::Response {
-    let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(size + 8.0, size + 12.0),
-        egui::Sense::click(),
-    );
-    let tile = egui::Rect::from_center_size(
-        rect.center() - egui::vec2(0.0, 4.0),
-        egui::vec2(size, size),
-    );
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(size + 8.0, size + 12.0), egui::Sense::click());
+    let tile =
+        egui::Rect::from_center_size(rect.center() - egui::vec2(0.0, 4.0), egui::vec2(size, size));
     icons::paint(ui, tile, Icon::app(panel), true);
     if response.hovered() {
-        ui.painter().rect_filled(tile, 8, Color32::from_white_alpha(28));
+        ui.painter()
+            .rect_filled(tile, 8, Color32::from_white_alpha(28));
     }
     if running {
         ui.painter().circle_filled(
