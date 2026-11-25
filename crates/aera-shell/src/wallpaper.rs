@@ -36,6 +36,37 @@ pub fn builtin(index: usize) -> egui::ColorImage {
     artwork(index.saturating_sub(PHOTOS.len()).min(2))
 }
 
+/// Respect egui's current texture limit, including its 2048px startup default.
+fn bounded(image: egui::ColorImage, limit: usize) -> egui::ColorImage {
+    let [w, h] = image.size;
+    let limit = limit.max(1);
+    let longest = w.max(h);
+    if longest <= limit {
+        return image;
+    }
+    let width = (w * limit / longest).max(1);
+    let height = (h * limit / longest).max(1);
+    let mut pixels = Vec::with_capacity(width * height);
+    for y in 0..height {
+        for x in 0..width {
+            pixels.push(image.pixels[(y * h / height) * w + x * w / width]);
+        }
+    }
+    egui::ColorImage {
+        size: [width, height],
+        pixels,
+    }
+}
+
+pub fn upload(
+    ctx: &egui::Context,
+    name: impl Into<String>,
+    image: egui::ColorImage,
+) -> egui::TextureHandle {
+    let limit = ctx.input(|input| input.max_texture_side);
+    ctx.load_texture(name, bounded(image, limit), egui::TextureOptions::LINEAR)
+}
+
 pub fn thumbnail(index: usize) -> egui::ColorImage {
     let full = builtin(index);
     let [w, h] = full.size;
@@ -172,6 +203,18 @@ pub fn paint(ui: &egui::Ui, texture: &egui::TextureHandle, cover: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn startup_texture_limit_is_respected() {
+        let ctx = egui::Context::default();
+        let image = egui::ColorImage::new([3840, 2160], Color32::WHITE);
+        let texture = upload(&ctx, "startup-test", image);
+        let limit = ctx.input(|input| input.max_texture_side);
+        let [width, height] = texture.size();
+        assert!(width <= limit && height <= limit);
+        assert_eq!(width, 2048);
+        assert_eq!(height, 1152);
+    }
+
     #[test]
     fn wide_image_cover_crops_horizontally() {
         let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(100.0, 100.0));
