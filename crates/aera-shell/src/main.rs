@@ -7,8 +7,8 @@ mod disks;
 mod files;
 mod glass;
 mod icons;
-mod wallpaper;
 mod terminal;
+mod wallpaper;
 use icons::Icon;
 
 use std::path::PathBuf;
@@ -143,8 +143,16 @@ impl Shell {
                 ui.strong("Favorites");
                 for name in ["Home", "Desktop", "Documents", "Downloads", "Pictures"] {
                     if let Some(base) = home() {
-                        let path = if name == "Home" { base } else { base.join(name) };
-                        if path.is_dir() && ui.selectable_label(self.directory.as_ref() == Some(&path), name).clicked() {
+                        let path = if name == "Home" {
+                            base
+                        } else {
+                            base.join(name)
+                        };
+                        if path.is_dir()
+                            && ui
+                                .selectable_label(self.directory.as_ref() == Some(&path), name)
+                                .clicked()
+                        {
                             self.navigate(path);
                         }
                     }
@@ -331,10 +339,17 @@ impl Shell {
                 }
                 ui.separator();
                 ui.checkbox(&mut self.compact_dock, "Compact dock");
-                ui.add(egui::Slider::new(&mut self.window_opacity, 65..=100).suffix("%").text("Window opacity"));
+                ui.add(
+                    egui::Slider::new(&mut self.window_opacity, 65..=100)
+                        .suffix("%")
+                        .text("Window opacity"),
+                );
                 ui.collapsing("Wallpaper", |ui| {
                     for (index, name) in wallpaper::NAMES.iter().enumerate() {
-                        if ui.selectable_label(self.wallpaper_choice == index, *name).clicked() {
+                        if ui
+                            .selectable_label(self.wallpaper_choice == index, *name)
+                            .clicked()
+                        {
                             self.wallpaper_texture = Some(ctx.load_texture(
                                 "desktop-wallpaper",
                                 wallpaper::builtin(index),
@@ -451,17 +466,27 @@ impl Shell {
         }
         let offset = panel as usize as f32 * 30.0;
         let workspace = self.desktop.active();
-        let alpha = if self.glass_enabled { (u16::from(self.window_opacity) * 255 / 100) as u8 } else { 255 };
-        let fill = if self.dark { Color32::from_rgba_unmultiplied(28, 32, 44, alpha) } else { Color32::from_rgba_unmultiplied(250, 251, 255, alpha) };
+        let alpha = if self.glass_enabled {
+            (u16::from(self.window_opacity) * 255 / 100) as u8
+        } else {
+            255
+        };
+        let fill = if self.dark {
+            Color32::from_rgba_unmultiplied(28, 32, 44, alpha)
+        } else {
+            Color32::from_rgba_unmultiplied(250, 251, 255, alpha)
+        };
         let frame = egui::Frame::window(&ctx.style()).fill(fill);
         egui::Window::new(panel.title())
             .id(egui::Id::new(("app", workspace, panel as usize)))
             .default_pos([80.0 + offset, 80.0 + offset])
-            .default_size(if matches!(panel, Panel::Files | Panel::Disks | Panel::Terminal) {
-                [650.0, 380.0]
-            } else {
-                [380.0, 260.0]
-            })
+            .default_size(
+                if matches!(panel, Panel::Files | Panel::Disks | Panel::Terminal) {
+                    [650.0, 380.0]
+                } else {
+                    [380.0, 260.0]
+                },
+            )
             .resizable([true, true])
             .min_size([240.0, 140.0])
             .frame(frame)
@@ -472,7 +497,9 @@ impl Shell {
                 if panel == Panel::Terminal {
                     self.app_content(ctx, ui, panel);
                 } else {
-                    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| self.app_content(ctx, ui, panel));
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| self.app_content(ctx, ui, panel));
                 }
             });
     }
@@ -510,56 +537,63 @@ impl eframe::App for Shell {
         let translucent = self.glass_enabled && self.glass_available;
         let chrome = design::chrome(self.dark, translucent);
         egui::TopBottomPanel::top("status")
-            .frame(egui::Frame::new().fill(chrome).inner_margin(egui::Margin::symmetric(12, 3)))
+            .frame(
+                egui::Frame::new()
+                    .fill(chrome)
+                    .inner_margin(egui::Margin::symmetric(12, 3)),
+            )
             .show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.menu_button("A E R A", |ui| {
-                    for panel in Panel::ALL {
-                        if icons::row(ui, Icon::app(panel), panel.title()).clicked() {
-                            self.launch(panel);
-                            ui.close_menu();
+                ui.horizontal(|ui| {
+                    ui.menu_button("A E R A", |ui| {
+                        for panel in Panel::ALL {
+                            if icons::row(ui, Icon::app(panel), panel.title()).clicked() {
+                                self.launch(panel);
+                                ui.close_menu();
+                            }
+                        }
+                    });
+                    ui.menu_button("Applications", |ui| {
+                        for panel in Panel::ALL {
+                            if ui.button(panel.title()).clicked() {
+                                self.launch(panel);
+                                ui.close_menu();
+                            }
+                        }
+                    });
+                    if icons::row(ui, Icon::Search, "Search").clicked() {
+                        self.launcher_open = !self.launcher_open;
+                    }
+                    ui.separator();
+                    for index in 0..self.desktop.count() {
+                        if ui
+                            .selectable_label(
+                                self.desktop.active() == index,
+                                format!("{}", index + 1),
+                            )
+                            .clicked()
+                        {
+                            self.desktop.switch(index);
                         }
                     }
-                });
-                ui.menu_button("Applications", |ui| {
-                    for panel in Panel::ALL {
-                        if ui.button(panel.title()).clicked() {
-                            self.launch(panel);
-                            ui.close_menu();
-                        }
-                    }
-                });
-                if icons::row(ui, Icon::Search, "Search").clicked() {
-                    self.launcher_open = !self.launcher_open;
-                }
-                ui.separator();
-                for index in 0..self.desktop.count() {
                     if ui
-                        .selectable_label(self.desktop.active() == index, format!("{}", index + 1))
+                        .add_enabled(
+                            self.desktop.count() < Desktop::MAX_WORKSPACES,
+                            egui::Button::new("+"),
+                        )
+                        .on_hover_text("New desktop")
                         .clicked()
                     {
-                        self.desktop.switch(index);
+                        self.desktop.add_workspace();
                     }
-                }
-                if ui
-                    .add_enabled(
-                        self.desktop.count() < Desktop::MAX_WORKSPACES,
-                        egui::Button::new("+"),
-                    )
-                    .on_hover_text("New desktop")
-                    .clicked()
-                {
-                    self.desktop.add_workspace();
-                }
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(if guest_session() {
-                        "AERA OS · Preview"
-                    } else {
-                        "Hosted session"
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(if guest_session() {
+                            "AERA OS · Preview"
+                        } else {
+                            "Hosted session"
+                        });
                     });
                 });
             });
-        });
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(texture) = &self.wallpaper_texture {
                 wallpaper::paint(ui, texture, self.wallpaper_cover);
@@ -585,7 +619,9 @@ impl eframe::App for Shell {
                                     panel,
                                     self.desktop.is_open(panel),
                                     if self.compact_dock { 32.0 } else { 40.0 },
-                                ).clicked() {
+                                )
+                                .clicked()
+                                {
                                     self.launch(panel);
                                 }
                             }
@@ -641,7 +677,8 @@ fn main() -> eframe::Result {
         "AERA Shell",
         options,
         Box::new(|cc| {
-            let dark = std::env::var_os("AERA_DARK").is_some() && std::env::var_os("AERA_LIGHT").is_none();
+            let dark =
+                std::env::var_os("AERA_DARK").is_some() && std::env::var_os("AERA_LIGHT").is_none();
             design::apply(&cc.egui_ctx, dark);
             let available =
                 cc.wgpu_render_state.is_some() && std::env::var_os("AERA_GLASS_OFF").is_none();
