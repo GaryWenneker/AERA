@@ -1,0 +1,28 @@
+name: AERA visual evidence
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'crates/aera-shell/**'
+      - '.github/workflows/visual.yml'
+permissions:
+  contents: read
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install software Vulkan and display tools
+        run: sudo apt-get update && sudo apt-get install -y xvfb xdotool imagemagick mesa-vulkan-drivers libvulkan1 libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libwayland-dev libssl-dev
+      - run: cargo build -p aera-shell --release
+      - name: Capture actual application
+        run: xvfb-run -a -s "-screen 0 1280x900x24" bash os/capture-visual.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aera-visual-${{ github.sha }}
+          path: visual-evidence/
