@@ -92,3 +92,6 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 
 ### Terminal streaming checkpoint
 - [ ] Validate bounded live stdout/stderr, UTF-8 split handling, hidden-window polling and direct child cancellation. Full PTY, process-tree termination, tabs and ANSI remain open.
+
+### AERA-058 visual refinement
+- [ ] Apply shared typography, flat controls, edge-to-edge desktop and refined dock/window material; organize settings; validate actual UI.
