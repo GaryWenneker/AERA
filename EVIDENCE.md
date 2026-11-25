@@ -25,3 +25,6 @@ CI run 45595836847 failed rustfmt on all three platforms. Applied the observed f
 
 ## Terminal streaming increment
 Live stdout/stderr via bounded synchronous channel, UTF-8 boundary handling and polling independent of window visibility committed. Latest CI 45598030421 queued when inspected; previous runs cancelled. No new test execution or screenshot validation observed. Direct child cancellation only; descendants may retain pipes, output may be truncated at completion, shell buffering may delay output. No PTY. Window transparency and two-axis resize still require interactive validation.
+
+## Terminal validation checkpoint
+Run 45598240964 failed rustfmt on all hosts. Applied 37 observed hunks from Linux job 139149935076 across six source files. Added three terminal unit tests for bounded output, split UTF-8 and streaming session lifecycle. New CI results pending; no claim of passing tests. PTY, real GUI resize tests and boot evidence remain open.
