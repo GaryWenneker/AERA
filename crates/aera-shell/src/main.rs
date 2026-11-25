@@ -531,7 +531,8 @@ fn main() -> eframe::Result {
         "AERA Shell",
         options,
         Box::new(|cc| {
-            design::apply(&cc.egui_ctx, true);
+            let dark = std::env::var_os("AERA_LIGHT").is_none();
+            design::apply(&cc.egui_ctx, dark);
             let available =
                 cc.wgpu_render_state.is_some() && std::env::var_os("AERA_GLASS_OFF").is_none();
             if available {
@@ -540,6 +541,7 @@ fn main() -> eframe::Result {
                 }
             }
             Ok(Box::new(Shell {
+                dark,
                 glass_available: available,
                 glass_enabled: available,
                 ..Shell::default()
