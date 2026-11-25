@@ -29,7 +29,7 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
     style.visuals.override_text_color = Some(text);
     style.visuals.widgets.inactive.bg_fill = elevated;
     style.visuals.widgets.inactive.weak_bg_fill = elevated;
-    style.visuals.selection.stroke = Stroke::new(1.0, accent);
+    style.visuals.selection.stroke = Stroke::new(1.0_f32, accent);
     style.spacing.item_spacing = egui::vec2(12.0, 8.0);
     style.spacing.button_padding = egui::vec2(16.0, 8.0);
     ctx.set_style(style);
@@ -48,7 +48,7 @@ pub fn wallpaper(ui: &egui::Ui, dark: bool) {
         painter.circle_stroke(
             center,
             rect.width() * index as f32 / 14.0,
-            Stroke::new(2.0, color),
+            Stroke::new(2.0_f32, color),
         );
     }
 }
