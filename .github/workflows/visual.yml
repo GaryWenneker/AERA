@@ -5,6 +5,7 @@ on:
     paths:
       - 'crates/aera-shell/**'
       - '.github/workflows/visual.yml'
+      - 'os/capture-visual.sh'
 permissions:
   contents: read
 concurrency:
