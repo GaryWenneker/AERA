@@ -1,0 +1,25 @@
+[Unit]
+Description=AERA graphical desktop
+After=systemd-user-sessions.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+User=aera
+Group=aera
+SupplementaryGroups=video render
+WorkingDirectory=/home/aera
+Environment=HOME=/home/aera
+Environment=AERA_GUEST_SESSION=1
+Environment=XDG_RUNTIME_DIR=/run/aera-session
+RuntimeDirectory=aera-session
+RuntimeDirectoryMode=0700
+ExecStart=/usr/bin/xinit /usr/local/bin/aera-session -- /usr/bin/Xorg :0 -nolisten tcp -noreset vt1
+Restart=on-failure
+RestartSec=3
+StandardInput=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+
+[Install]
+WantedBy=multi-user.target
