@@ -452,6 +452,17 @@ impl Shell {
                 if icons::row(ui, Icon::About, "System information").clicked() {
                     self.launch(Panel::About);
                 }
+                ui.collapsing("System icon library", |ui| {
+                    ui.horizontal_wrapped(|ui| {
+                        for icon in Icon::ALL {
+                            ui.vertical(|ui| {
+                                let (rect, _) = ui.allocate_exact_size(egui::vec2(32.0, 32.0), egui::Sense::hover());
+                                icons::paint(ui, rect, icon, true);
+                                ui.small(icon.label());
+                            });
+                        }
+                    });
+                });
                 }),
                         }
                         ui.small("Session settings");
