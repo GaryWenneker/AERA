@@ -99,3 +99,9 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 ### Terminal and Settings redesign
 - [ ] AERA-059 replace default command form with portable-pty 0.9 and vt100 0.15.2, bounded channels, grid and keyboard input; retain command runner as source fallback only. Test shell, colors, resize and exit. Tabs, splits, selection and clipboard integration follow.
 - [ ] AERA-060 category sidebar, consistent settings surfaces, remove transparent text bleed. Visual review on actual app.
+
+### Desktop quality sprint
+- [ ] Implement Files navigation state, list/grid views and separate action controls (AERA-061).
+- [ ] Implement dock hover animation and stable geometry, verify restore/focus (AERA-062).
+- [ ] Add cached wallpaper thumbnails, local photo picker and bundled photo assets (AERA-063).
+- [ ] Capture real app at 1100x720, verify light/dark and 640x480, inspect before approval.
