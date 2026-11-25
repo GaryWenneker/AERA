@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use aera_shell::{search, Desktop, Panel, WindowState};
-use eframe::egui::{self, Color32, RichText};
+use eframe::egui::{self, Color32};
 mod design;
 mod disks;
 mod files;
@@ -12,6 +12,7 @@ use std::path::PathBuf;
 struct Shell {
     desktop: Desktop,
     query: String,
+    launcher_open: bool,
     dark: bool,
     glass_enabled: bool,
     glass_available: bool,
@@ -33,6 +34,7 @@ impl Default for Shell {
         Self {
             desktop: Desktop::default(),
             query: String::new(),
+            launcher_open: false,
             dark: true,
             glass_enabled: true,
             glass_available: false,
@@ -115,6 +117,30 @@ impl Shell {
     }
 
     fn files_view(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal_top(|ui| {
+            ui.vertical(|ui| {
+                ui.set_width(126.0);
+                ui.strong("Favorites");
+                for name in ["Home", "Desktop", "Documents", "Downloads", "Pictures"] {
+                    if let Some(base) = home() {
+                        let path = if name == "Home" { base } else { base.join(name) };
+                        if path.is_dir() && ui.selectable_label(self.directory.as_ref() == Some(&path), name).clicked() {
+                            self.navigate(path);
+                        }
+                    }
+                }
+                ui.separator();
+                ui.strong("Locations");
+                if ui.button("Volumes").clicked() {
+                    self.launch(Panel::Disks);
+                }
+            });
+            ui.separator();
+            ui.vertical(|ui| self.files_content(ui));
+        });
+    }
+
+    fn files_content(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             if ui.button("Home").clicked() {
                 if let Some(path) = home() {
@@ -289,7 +315,10 @@ impl Shell {
                 );
                 ui.add(egui::Slider::new(&mut self.glass_quality, 0.0..=1.0).text("Blur quality"));
                 ui.checkbox(&mut self.reduced_motion, "Reduce motion");
-                ui.label("Wallpaper-only optical preview; opaque application surfaces.");
+                ui.label("Optical material test (wallpaper only)");
+                if self.glass_enabled && self.glass_available {
+                    glass::preview(ui, self.dark, self.glass_quality, self.reduced_motion);
+                }
                 ui.separator();
                 ui.heading("Storage & system");
                 if ui.button("Open Disks").clicked() {
@@ -317,33 +346,19 @@ impl Shell {
 
     fn window_controls(&mut self, ui: &mut egui::Ui, panel: Panel) {
         ui.horizontal(|ui| {
-            if ui
-                .button(RichText::new("×").color(Color32::from_rgb(230, 95, 95)))
-                .on_hover_text("Close window")
-                .clicked()
-            {
+            if design::traffic(ui, Color32::from_rgb(237, 106, 101), "×", "Close") {
                 self.desktop.set_state(panel, WindowState::Closed);
             }
-            if ui
-                .button(RichText::new("−").color(Color32::from_rgb(213, 163, 65)))
-                .on_hover_text("Minimize window")
-                .clicked()
-            {
+            if design::traffic(ui, Color32::from_rgb(230, 183, 78), "−", "Minimize") {
                 self.desktop.set_state(panel, WindowState::Minimized);
             }
             let maximized = self.desktop.state(panel) == WindowState::Maximized;
-            if ui
-                .button(
-                    RichText::new(if maximized { "↙" } else { "□" })
-                        .color(Color32::from_rgb(75, 180, 135)),
-                )
-                .on_hover_text(if maximized {
-                    "Restore window"
-                } else {
-                    "Maximize window"
-                })
-                .clicked()
-            {
+            if design::traffic(
+                ui,
+                Color32::from_rgb(92, 190, 124),
+                "↗",
+                if maximized { "Restore" } else { "Maximize" },
+            ) {
                 self.desktop.set_state(
                     panel,
                     if maximized {
@@ -353,6 +368,7 @@ impl Shell {
                     },
                 );
             }
+            ui.add_space(12.0);
             ui.strong(panel.title());
         });
         ui.separator();
@@ -373,6 +389,7 @@ impl Shell {
                 [380.0, 260.0]
             })
             .resizable(true)
+            .title_bar(false)
             .show(ctx, |ui| {
                 self.window_controls(ui, panel);
                 self.app_content(ctx, ui, panel);
@@ -408,7 +425,11 @@ impl eframe::App for Shell {
             });
             return;
         }
-        egui::TopBottomPanel::top("status").show(ctx, |ui| {
+        let translucent = self.glass_enabled && self.glass_available;
+        let chrome = design::chrome(self.dark, translucent);
+        egui::TopBottomPanel::top("status")
+            .frame(egui::Frame::new().fill(chrome).inner_margin(egui::Margin::symmetric(12, 3)))
+            .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.menu_button("A E R A", |ui| {
                     for panel in Panel::ALL {
@@ -418,6 +439,17 @@ impl eframe::App for Shell {
                         }
                     }
                 });
+                ui.menu_button("Applications", |ui| {
+                    for panel in Panel::ALL {
+                        if ui.button(panel.title()).clicked() {
+                            self.launch(panel);
+                            ui.close_menu();
+                        }
+                    }
+                });
+                if ui.button("Search").clicked() {
+                    self.launcher_open = !self.launcher_open;
+                }
                 ui.separator();
                 for index in 0..self.desktop.count() {
                     if ui
@@ -446,68 +478,55 @@ impl eframe::App for Shell {
                 });
             });
         });
-        egui::TopBottomPanel::bottom("dock").show(ctx, |ui| {
-            ui.horizontal_centered(|ui| {
-                for panel in Panel::ALL {
-                    let label = if self.desktop.state(panel) == WindowState::Minimized {
-                        format!("{} · minimized", panel.title())
-                    } else {
-                        panel.title().to_owned()
-                    };
-                    if ui
-                        .selectable_label(self.desktop.is_open(panel), label)
-                        .clicked()
-                    {
-                        self.launch(panel);
-                    }
-                }
-            });
-        });
         egui::CentralPanel::default().show(ctx, |ui| {
             design::wallpaper(ui, self.dark);
-            ui.add_space(64.0);
-            ui.vertical_centered(|ui| {
-                ui.label(RichText::new("A E R A").size(48.0).strong());
-                ui.label("One OS. Any machine.");
-                if self.glass_enabled && self.glass_available {
-                    ui.add_space(12.0);
-                    glass::preview(ui, self.dark, self.glass_quality, self.reduced_motion);
-                }
-                ui.add_space(20.0);
-                ui.horizontal_wrapped(|ui| {
-                    for panel in Panel::ALL {
-                        if ui
-                            .add_sized([110.0, 64.0], egui::Button::new(panel.title()))
-                            .clicked()
-                        {
-                            self.launch(panel);
+        });
+        egui::Area::new(egui::Id::new("floating-dock"))
+            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -12.0))
+            .order(egui::Order::Foreground)
+            .show(ctx, |ui| {
+                egui::Frame::new()
+                    .fill(chrome)
+                    .corner_radius(egui::CornerRadius::same(18))
+                    .stroke(egui::Stroke::new(1.0_f32, Color32::from_white_alpha(70)))
+                    .inner_margin(egui::Margin::symmetric(10, 4))
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 4.0;
+                            for panel in Panel::ALL {
+                                if design::dock_icon(ui, panel, self.desktop.is_open(panel)).clicked() {
+                                    self.launch(panel);
+                                }
+                            }
+                        });
+                    });
+            });
+        if self.launcher_open {
+            let mut open = self.launcher_open;
+            egui::Window::new("Search applications")
+                .open(&mut open)
+                .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 64.0))
+                .resizable(false)
+                .show(ctx, |ui| {
+                    let response = ui.text_edit_singleline(&mut self.query);
+                    let matches = search(&self.query);
+                    if (response.has_focus() || response.lost_focus())
+                        && ui.input(|input| input.key_pressed(egui::Key::Enter))
+                    {
+                        if let Some(panel) = matches.first() {
+                            self.launch(*panel);
+                            self.launcher_open = false;
                         }
-                    }
-                });
-                ui.add_space(12.0);
-                let response = ui.add(
-                    egui::TextEdit::singleline(&mut self.query).hint_text("Search applications"),
-                );
-                let matches = search(&self.query);
-                if (response.has_focus() || response.lost_focus())
-                    && ui.input(|input| input.key_pressed(egui::Key::Enter))
-                {
-                    if let Some(panel) = matches.first() {
-                        self.launch(*panel);
-                    }
-                }
-                if !self.query.trim().is_empty() {
-                    if matches.is_empty() {
-                        ui.label("No applications found");
                     }
                     for panel in matches {
                         if ui.button(panel.title()).clicked() {
                             self.launch(panel);
+                            self.launcher_open = false;
                         }
                     }
-                }
-            });
-        });
+                });
+            self.launcher_open &= open;
+        }
         for panel in Panel::ALL {
             self.panel(ctx, panel);
         }
