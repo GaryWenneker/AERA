@@ -127,7 +127,11 @@ pub fn install(state: &egui_wgpu::RenderState) {
     let pipelines = ["scene", "down", "up", "glass"]
         .into_iter()
         .map(|entry| {
-            let format = if entry == "glass" { state.target_format } else { FORMAT };
+            let format = if entry == "glass" {
+                state.target_format
+            } else {
+                FORMAT
+            };
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some(entry),
                 layout: Some(&pipeline_layout),
@@ -220,18 +224,31 @@ impl CallbackTrait for Material {
 
 pub fn preview(ui: &mut egui::Ui, dark: bool, quality: f32, reduced_motion: bool) {
     let width = ui.available_width().clamp(100.0, 768.0);
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, width * 0.5), egui::Sense::hover());
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, width * 0.5), egui::Sense::hover());
     let pointer = response.hover_pos().unwrap_or(rect.center_top());
     let uv = (pointer - rect.min) / rect.size();
     let radius = if reduced_motion {
         0.38
     } else {
-        ui.ctx().animate_bool_with_time(response.id, response.hovered(), 0.22) * 0.04 + 0.36
+        ui.ctx()
+            .animate_bool_with_time(response.id, response.hovered(), 0.22)
+            * 0.04
+            + 0.36
     };
     ui.painter().add(egui_wgpu::Callback::new_paint_callback(
         rect,
         Material {
-            values: [uv.x, uv.y, radius, if dark { 1.0 } else { 0.0 }, 2.0, quality.clamp(0.0, 1.0), 0.0, 0.0],
+            values: [
+                uv.x,
+                uv.y,
+                radius,
+                if dark { 1.0 } else { 0.0 },
+                2.0,
+                quality.clamp(0.0, 1.0),
+                0.0,
+                0.0,
+            ],
         },
     ));
 }
