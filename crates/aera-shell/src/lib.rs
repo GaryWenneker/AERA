@@ -10,7 +10,13 @@ pub enum Panel {
 }
 
 impl Panel {
-    pub const ALL: [Self; 5] = [Self::Files, Self::Disks, Self::Settings, Self::About, Self::Terminal];
+    pub const ALL: [Self; 5] = [
+        Self::Files,
+        Self::Disks,
+        Self::Settings,
+        Self::About,
+        Self::Terminal,
+    ];
 
     pub fn title(self) -> &'static str {
         match self {
