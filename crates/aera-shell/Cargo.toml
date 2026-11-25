@@ -1,0 +1,9 @@
+[package]
+name = "aera-shell"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+aera-core = { path = "../aera-core" }
+eframe = { version = "=0.31.1", default-features = false, features = ["wgpu", "default_fonts", "accesskit", "x11", "wayland"] }
