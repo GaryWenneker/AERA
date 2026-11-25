@@ -1,3 +1,5 @@
 # Development rules
 
 Spec first. Link each change to stable AERA requirement IDs. Keep SPEC.md, ROADMAP.md and code synchronized in the same change. Humans and agents may check/uncheck items, but require reproducible evidence for completion. Record spec revisions in Git and reopen invalidated checks. Use English in code and docs, UTF-8 without BOM. Prefer standard library and safe Rust; justify dependencies and unsafe blocks. Test failure paths before implementation; run fmt, Clippy with warnings denied, tests and release build. Never invent results. Record skipped gates and blockers in EVIDENCE.md. No destructive disk operations, unsupported platform claims or fabricated performance numbers. Continue within authorized scope; stop at unsafe or unverified deployment boundaries.
+
+Screenshots must originate from the actual running AERA executable at an identified source revision. Never present mockups or generated images as screenshots. Capture and record platform, resolution, theme and renderer; leave screenshot acceptance unchecked if unavailable.
