@@ -2,11 +2,36 @@
 use eframe::egui::{self, Color32};
 use std::path::Path;
 
-pub const NAMES: [&str; 3] = ["Alpine dawn", "Coastal dusk", "Silk"];
+include!(concat!(env!("OUT_DIR"), "/photos.rs"));
+
+pub const NAMES: [&str; 6] = [
+    "Alpine lake", "Midnight", "Autumn lake",
+    "Alpine artwork", "Dusk artwork", "Silk",
+];
+
+pub fn available(index: usize) -> bool {
+    index >= PHOTOS.len() || PHOTOS[index].is_some()
+}
+
+pub fn default_index() -> usize {
+    (0..PHOTOS.len()).find(|&i| available(i)).unwrap_or(3)
+}
 const W: usize = 1280;
 const H: usize = 720;
 
 pub fn builtin(index: usize) -> egui::ColorImage {
+    if let Some(Some(bytes)) = PHOTOS.get(index) {
+        if let Ok(image) = image::load_from_memory_with_format(bytes, image::ImageFormat::Jpeg) {
+            let rgba = image.thumbnail(3840, 2160).to_rgba8();
+            return egui::ColorImage::from_rgba_unmultiplied(
+                [rgba.width() as usize, rgba.height() as usize], rgba.as_raw(),
+            );
+        }
+    }
+    artwork(index.saturating_sub(PHOTOS.len()).min(2))
+}
+
+fn artwork(index: usize) -> egui::ColorImage {
     let palettes = [
         [
             [157, 184, 230],
