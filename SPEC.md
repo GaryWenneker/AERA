@@ -61,3 +61,6 @@ AERA-053 requires a desktop-first visual correction per DESIGN.md and GLASS.md, 
 - [ ] AERA-054 Fresh neutral light-default desktop with blue accent and complementary wallpaper, dark alternative; consistent native scalable icon family for apps and settings, compact dock control, no fake app launchers. Validate real captures at both sizes and themes.
 
 - [ ] AERA-055 Wallpaper gallery, full desktop rendering with aspect-preserving cover/fit, custom local image loading with bounded decode and visible errors. Verify actual captures and invalid image handling; persistence and native chooser follow.
+
+- [ ] AERA-056 Floating windows have translucent themed frames, independently resizable width/height and scrollable content; opacity configurable. Actual backdrop blur remains a separate compositor gate.
+- [ ] AERA-057 Terminal app launches real user-requested commands asynchronously, streams bounded output, supports persistent working directory, history and cancellation. Hosted execution is explicitly labelled host execution; guest uses guest shell. No elevation or automatic execution. Full PTY/ANSI interactive emulation follows.
