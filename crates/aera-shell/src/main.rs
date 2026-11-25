@@ -566,10 +566,10 @@ impl Shell {
                     1 => design::section(ui, "Wallpaper", |ui| {
                     if self.wallpaper_thumbs.is_empty() {
                         for index in 0..wallpaper::NAMES.len() {
-                            self.wallpaper_thumbs.push(ctx.load_texture(
+                            self.wallpaper_thumbs.push(wallpaper::upload(
+                                ctx,
                                 format!("wallpaper-thumb-{index}"),
                                 wallpaper::thumbnail(index),
-                                egui::TextureOptions::LINEAR,
                             ));
                         }
                     }
@@ -593,11 +593,7 @@ impl Shell {
                         }
                     });
                     if let Some(index) = chosen {
-                        self.wallpaper_texture = Some(ctx.load_texture(
-                            "desktop-wallpaper",
-                            wallpaper::builtin(index),
-                            egui::TextureOptions::LINEAR,
-                        ));
+                        self.wallpaper_texture = Some(wallpaper::upload(ctx, "desktop-wallpaper", wallpaper::builtin(index)));
                         self.wallpaper_choice = index;
                         self.wallpaper_error = None;
                     }
@@ -609,11 +605,7 @@ impl Shell {
                     if ui.button("Apply image").clicked() {
                         match wallpaper::load(std::path::Path::new(&self.wallpaper_path)) {
                             Ok(image) => {
-                                self.wallpaper_texture = Some(ctx.load_texture(
-                                    "desktop-wallpaper",
-                                    image,
-                                    egui::TextureOptions::LINEAR,
-                                ));
+                                self.wallpaper_texture = Some(wallpaper::upload(ctx, "desktop-wallpaper", image));
                                 self.wallpaper_choice = wallpaper::NAMES.len();
                                 self.wallpaper_error = None;
                             }
@@ -764,6 +756,13 @@ impl Shell {
 
 impl eframe::App for Shell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.wallpaper_texture.is_none() {
+            self.wallpaper_texture = Some(wallpaper::upload(
+                ctx,
+                "desktop-wallpaper",
+                wallpaper::builtin(self.wallpaper_choice),
+            ));
+        }
         self.terminal.poll(ctx);
         if let Some(session) = &mut self.pty {
             session.poll();
@@ -955,8 +954,10 @@ fn main() -> eframe::Result {
             let dark =
                 std::env::var_os("AERA_DARK").is_some() && std::env::var_os("AERA_LIGHT").is_none();
             design::apply(&cc.egui_ctx, dark, 0);
-            let available =
-                cc.wgpu_render_state.is_some() && std::env::var_os("AERA_GLASS_OFF").is_none();
+            let safe_mode = std::env::var_os("AERA_SAFE_MODE").is_some();
+            let available = cc.wgpu_render_state.is_some()
+                && std::env::var_os("AERA_GLASS_OFF").is_none()
+                && !safe_mode;
             if available {
                 if let Some(state) = &cc.wgpu_render_state {
                     glass::install(state);
@@ -964,9 +965,6 @@ fn main() -> eframe::Result {
             }
             Ok(Box::new(Shell {
                 dark,
-                wallpaper_texture: Some(cc.egui_ctx.load_texture(
-                    "desktop-wallpaper",
-                    wallpaper::builtin(wallpaper::default_index()),
                     egui::TextureOptions::LINEAR,
                 )),
                 glass_available: available,
