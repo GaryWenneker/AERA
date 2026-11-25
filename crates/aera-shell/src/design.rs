@@ -26,21 +26,40 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
             Color32::from_rgb(58, 96, 187),
         )
     };
+    style.text_styles.insert(egui::TextStyle::Body, egui::FontId::proportional(13.0));
+    style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
+    style.text_styles.insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
+    style.text_styles.insert(egui::TextStyle::Heading, egui::FontId::proportional(20.0));
     style.visuals.panel_fill = canvas;
     style.visuals.window_fill = surface;
     style.visuals.override_text_color = Some(text);
     style.visuals.widgets.inactive.bg_fill = elevated;
-    style.visuals.widgets.inactive.weak_bg_fill = elevated;
+    style.visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
+    style.visuals.widgets.inactive.bg_stroke = Stroke::NONE;
+    style.visuals.widgets.hovered.weak_bg_fill = if dark {
+        Color32::from_white_alpha(24)
+    } else {
+        Color32::from_black_alpha(16)
+    };
+    style.visuals.widgets.hovered.bg_stroke = Stroke::NONE;
+    for widget in [
+        &mut style.visuals.widgets.inactive,
+        &mut style.visuals.widgets.hovered,
+        &mut style.visuals.widgets.active,
+        &mut style.visuals.widgets.noninteractive,
+    ] {
+        widget.corner_radius = egui::CornerRadius::same(7);
+    }
     style.visuals.selection.stroke = Stroke::new(1.0_f32, accent);
-    style.visuals.window_corner_radius = egui::CornerRadius::same(12);
+    style.visuals.window_corner_radius = egui::CornerRadius::same(16);
     style.visuals.menu_corner_radius = egui::CornerRadius::same(10);
     style.visuals.selection.bg_fill = if dark {
         Color32::from_rgb(51, 69, 111)
     } else {
         Color32::from_rgb(211, 222, 248)
     };
-    style.spacing.item_spacing = egui::vec2(12.0, 8.0);
-    style.spacing.button_padding = egui::vec2(16.0, 8.0);
+    style.spacing.item_spacing = egui::vec2(8.0, 8.0);
+    style.spacing.button_padding = egui::vec2(10.0, 5.0);
     ctx.set_style(style);
 }
 
@@ -130,4 +149,29 @@ pub fn traffic(ui: &mut egui::Ui, color: Color32, glyph: &str, hint: &str) -> bo
         );
     }
     response.on_hover_text(hint).clicked()
+}
+
+pub fn section(ui: &mut egui::Ui, title: &str, content: impl FnOnce(&mut egui::Ui)) {
+    ui.add_space(8.0);
+    ui.label(egui::RichText::new(title).size(15.0).strong());
+    let dark = ui.visuals().dark_mode;
+    let fill = if dark {
+        Color32::from_white_alpha(12)
+    } else {
+        Color32::from_white_alpha(150)
+    };
+    let edge = if dark {
+        Color32::from_white_alpha(20)
+    } else {
+        Color32::from_black_alpha(15)
+    };
+    egui::Frame::new()
+        .fill(fill)
+        .stroke(Stroke::new(1.0_f32, edge))
+        .corner_radius(egui::CornerRadius::same(12))
+        .inner_margin(egui::Margin::same(12))
+        .show(ui, |ui| {
+            ui.set_min_width(ui.available_width());
+            content(ui);
+        });
 }
