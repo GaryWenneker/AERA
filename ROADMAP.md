@@ -89,3 +89,6 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 ### Window and terminal increment
 - [ ] AERA-056 custom window frame and two-axis resizing, test drag and restore on real desktop.
 - [ ] AERA-057 terminal command runner, bounded asynchronous output, cancel, history, cd, and icon integration. Next: PTY and ANSI terminal grid, interactive shells, tabs, per-workspace sessions.
+
+### Terminal streaming checkpoint
+- [ ] Validate bounded live stdout/stderr, UTF-8 split handling, hidden-window polling and direct child cancellation. Full PTY, process-tree termination, tabs and ANSI remain open.
