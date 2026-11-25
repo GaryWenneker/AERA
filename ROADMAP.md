@@ -62,3 +62,10 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 - [ ] Global menu bar and dock, maximize presentation, workspace switcher and keyboard navigation.
 - [ ] Separate app content per workspace, move windows between workspaces, overview and persistence.
 - [ ] Validate real interaction, accessibility, geometry restore and native compositor integration.
+
+## Glass rendering track
+- [ ] G0/G1: scene texture and two-pass blur prototype.
+- [ ] G2/G3/G4: WGSL optical material, tint and highlight.
+- [ ] G5/G6: fluid shape interpolation, fallback and quality settings; reusable material.
+- [ ] G7: ordered compositor backdrop capture and all shell surfaces.
+- [ ] G8: benchmark GPU, accessibility, screenshots and regression validation. See GLASS.md.
