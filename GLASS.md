@@ -20,3 +20,7 @@ Run shader validation, fmt, clippy, tests, release build and actual Linux displa
 - [ ] AERA-048 Replace single-center luminance proxy with bounded multi-sample regional average and contrast-safe material interior. Test light/dark and high-frequency backgrounds.
 - [ ] AERA-049 Reuse GPU scene and blur textures on pointer-only updates; invalidate on quality/theme changes. Preserve ordered backdrop capture as separate work.
 - [ ] AERA-050 Capture actual dark, light and fallback startup frames, record per-image dimensions and source commit. Capture script changes trigger visual CI. No generated screenshots.
+
+## Shader validation and build throughput
+- [ ] AERA-051 Parse and validate all WGSL entry points in ordinary Rust unit tests using Naga 24 (already the wgpu shader compiler; dev-only direct dependency). GPU pipeline validation and actual display tests remain mandatory.
+- [ ] AERA-052 Coalesce stale CI/guest builds by branch; retain strict fmt/lint/test gates and capture logs on screenshot failures. Only actual successful capture artifacts count as visual evidence.
