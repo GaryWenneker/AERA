@@ -23,3 +23,6 @@ Use eframe/egui 0.31.1 with the wgpu renderer for the first hosted shell; applic
 
 ## ADR-003 — bootable engineering preview
 Use Debian bookworm userspace and Linux kernel with systemd, Xorg/Openbox as temporary display infrastructure and Mesa Vulkan. AERA Shell is the unprivileged fullscreen session. Build qcow2 via libguestfs using a new regular file; direct kernel boot in QEMU first. No host disk access; no guest network by default. UEFI, ARM64, hardened sessions and native compositor remain later gates.
+
+## ADR-004 — first-party system apps
+Separate filesystem and mount inventory from GUI code in aera-shell service modules initially; extract platform service crates after contracts stabilize. sysinfo 0.33.1 provides portable mounted filesystem discovery and capacity; it is not a physical partition manager. File navigation uses std::fs and native PathBuf, preserves non-UTF8 paths, and avoids following symlinks for directory classification. No privileged commands or disk writes in this preview. Future mutating services require authorization, path/device identity checks and recovery.
