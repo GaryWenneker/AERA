@@ -28,3 +28,6 @@ Live stdout/stderr via bounded synchronous channel, UTF-8 boundary handling and 
 
 ## Terminal validation checkpoint
 Run 45598240964 failed rustfmt on all hosts. Applied 37 observed hunks from Linux job 139149935076 across six source files. Added three terminal unit tests for bounded output, split UTF-8 and streaming session lifecycle. New CI results pending; no claim of passing tests. PTY, real GUI resize tests and boot evidence remain open.
+
+## Settings and PTY redesign
+AERA-059/060 initial implementation: persistent portable-pty session, vt100 grid, ANSI palette, keyboard input, resize, bounded channels, restart and fallback runner on startup error; Settings category navigation and opaque Settings/Terminal surfaces. VT cursor/color unit test authored, not executed. No confirmed compilation, fmt/lint, interactive shell or screenshot review. PTY session shared across workspaces; tabs, splits, scrollback navigation, selection/copy, complete key/mode protocol, EOF handling and process reaping remain open. No true backdrop blur. User runtime screenshots are the basis of the redesign, not proof of the new implementation.
