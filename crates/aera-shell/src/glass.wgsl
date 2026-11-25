@@ -28,7 +28,9 @@ struct VertexOut {
     let wave = sin(x * 5.0 + q.y * 7.0);
     let bands = smoothstep(-0.15, 0.15, sin(length(vec2<f32>(x - p.aspect * 0.78, q.y - 1.0)) * 34.0));
     let color = mix(vec3<f32>(0.045, 0.10, 0.16), vec3<f32>(0.24, 0.48, 0.46), wave * 0.5 + 0.5);
-    return vec4<f32>(color + bands * 0.08, 1.0);
+    let dark_scene = color + bands * 0.08;
+    let light_scene = mix(vec3<f32>(0.88, 0.93, 0.94), color + 0.30, 0.60) + bands * 0.04;
+    return vec4<f32>(mix(light_scene, dark_scene, p.dark), 1.0);
 }
 
 // Kawase-style weighted center and four diagonal taps.
@@ -73,9 +75,27 @@ fn field(uv: vec2<f32>) -> f32 {
     let edge = exp(-abs(pixel_distance) / 9.0);
     let uv = clamp(v.uv - normal * edge * vec2<f32>(0.015 / p.aspect, 0.015), vec2<f32>(0.0), vec2<f32>(1.0));
     let blurred = textureSample(filtered, linear_sampler, uv).rgb;
-    let mean = dot(textureSampleLevel(filtered, linear_sampler, vec2<f32>(0.5), 0.0).rgb, vec3<f32>(0.2126, 0.7152, 0.0722));
-    let tint = mix(vec3<f32>(0.80), vec3<f32>(0.035, 0.05, 0.065), p.dark);
-    let glass_color = mix(blurred, tint, clamp(0.62 + (mean - 0.5) * 0.15, 0.55, 0.72));
+    // Bounded nine-point regional estimate, not a full texture reduction.
+    var sum = vec3<f32>(0.0);
+    for (var y = 0u; y < 3u; y++) {
+        for (var x = 0u; x < 3u; x++) {
+            let point = vec2<f32>(0.5) + (vec2<f32>(f32(x), f32(y)) - 1.0) * vec2<f32>(0.23, 0.18);
+            sum += textureSampleLevel(filtered, linear_sampler, point, 0.0).rgb;
+        }
+    }
+    let weights = vec3<f32>(0.2126, 0.7152, 0.0722);
+    let mean = dot(sum / 9.0, weights);
+    let tint = mix(vec3<f32>(0.92), vec3<f32>(0.025, 0.035, 0.05), p.dark);
+    let opacity = mix(0.62 + (1.0 - mean) * 0.18, 0.62 + mean * 0.18, p.dark);
+    let muted = mix(vec3<f32>(dot(blurred, weights)), blurred, 0.72);
+    let tinted = mix(muted, tint, opacity);
+    // Clamp interior luminance toward a readable material for the chosen theme.
+    // Actual foreground contrast must still be verified in the composited UI.
+    let lum = dot(tinted, weights);
+    let dark_safe = tinted * min(1.0, 0.14 / max(lum, 0.0001));
+    let lift = clamp((0.74 - lum) / max(1.0 - lum, 0.0001), 0.0, 1.0);
+    let light_safe = mix(tinted, vec3<f32>(1.0), lift);
+    let glass_color = mix(light_safe, dark_safe, p.dark);
     let direction = p.pointer - v.uv;
     let light = direction / max(length(direction), 0.0001);
     let specular = pow(max(dot(normal, light), 0.0), 4.0);
