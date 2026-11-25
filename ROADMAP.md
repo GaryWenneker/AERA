@@ -79,3 +79,6 @@ See DESKTOP.md for acceptance and dependency justification. No user disk modific
 - [ ] Remove desktop shader demo and redundant tiles; implement centered icon dock, top menu and window chrome.
 - [ ] Files location sidebar and actual desktop/Files screenshots.
 - [ ] Replace interim translucent chrome with shared compositor Glass material after backdrop capture is implemented.
+
+### Fresh visual system
+- [ ] AERA-054 implement shared vector icon registry, light-default palette, compact dock sizing and icon-labelled menus/settings. Validate live screenshots and interaction.
