@@ -254,3 +254,57 @@ impl Drop for Terminal {
         self.cancel.store(true, Ordering::Relaxed);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn output_is_bounded_and_preserves_utf8() {
+        let mut terminal = Terminal::default();
+        terminal.append(&"é".repeat(LIMIT));
+        assert!(terminal.output.len() <= LIMIT);
+        assert!(terminal.output.chars().all(|c| c == 'é'));
+    }
+
+    #[test]
+    fn stream_preserves_split_utf8() {
+        struct ByteReader(std::io::Cursor<Vec<u8>>);
+        impl Read for ByteReader {
+            fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+                let count = buf.len().min(1);
+                self.0.read(&mut buf[..count])
+            }
+        }
+        let (tx, rx) = mpsc::sync_channel(64);
+        stream(
+            ByteReader(std::io::Cursor::new("Aé界".as_bytes().to_vec())),
+            tx,
+            egui::Context::default(),
+        );
+        let output: String = rx
+            .try_iter()
+            .filter_map(|event| match event {
+                Event::Output(text) => Some(text),
+                Event::Done(_) => None,
+            })
+            .collect();
+        assert_eq!(output, "Aé界");
+    }
+
+    #[test]
+    fn live_output_does_not_end_session() {
+        let mut terminal = Terminal::default();
+        let (tx, rx) = mpsc::sync_channel(4);
+        terminal.result = Some(rx);
+        let ctx = egui::Context::default();
+        tx.send(Event::Output("first".into())).unwrap();
+        terminal.poll(&ctx);
+        assert_eq!(terminal.output, "first");
+        assert!(terminal.result.is_some());
+        tx.send(Event::Done("done".into())).unwrap();
+        terminal.poll(&ctx);
+        assert!(terminal.result.is_none());
+        assert_eq!(terminal.output, "firstdone");
+    }
+}
