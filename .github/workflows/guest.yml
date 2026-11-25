@@ -3,12 +3,18 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'os/**'
+      - 'os/build-image.sh'
+      - 'os/run-vm.sh'
+      - 'os/smoke-vm.sh'
+      - 'os/aera-session*'
       - 'crates/**'
       - 'Cargo.toml'
       - '.github/workflows/guest.yml'
 permissions:
   contents: read
+concurrency:
+  group: guest-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   guest:
     runs-on: ubuntu-latest
@@ -17,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build shell against Debian bookworm glibc
         run: |
-          docker run --rm -v "$PWD:/src" -w /src rust:1.91-bookworm bash -ec '
+          docker run --rm -v "$PWD:/src" -w /src rust:1.100-bookworm bash -ec '
             apt-get update
             apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libwayland-dev libssl-dev
             cargo build -p aera-shell --release
