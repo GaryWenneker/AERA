@@ -55,3 +55,5 @@ Desktop window and workspace requirements AERA-037–040 in DESKTOP.md extend AE
 AERA-041–047 define the hybrid GPU Glass material in [GLASS.md](GLASS.md). Actual screenshot provenance is mandatory.
 
 AERA-048–050 extend GLASS.md with regional luminance, intermediate texture caching and three-mode screenshot evidence.
+
+AERA-053 requires a desktop-first visual correction per DESIGN.md and GLASS.md, with real screenshot evidence.
